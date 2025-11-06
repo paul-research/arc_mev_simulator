@@ -1,0 +1,317 @@
+# MEV-Simulator Configuration
+# ==========================
+
+# Simulation General Settings
+simulation:
+  name: "mev_competition_analysis"
+  description: "Multi-bot MEV competition with latency simulation"
+  duration_minutes: 30
+  target_transactions: 100
+  output_dir: "data/results"
+  log_level: "INFO"
+  
+# Network Configuration
+network:
+  name: "arc_testnet"
+  rpc_url: "https://rpc.arc.gateway.fm"
+  chain_id: 1337
+  block_time_ms: 500
+  gas_price_gwei: 300
+  max_priority_fee_gwei: 50
+  
+  # Contract Addresses (will be updated after deployment)
+  contracts:
+    uniswap_v3_factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+    uniswap_v3_router: "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+    position_manager: "0xC36442b4c4e76c8f7a04B0eE0d2C2d4C6e5e4F2D"
+    quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"
+  
+# MEV Bot Configuration
+mev_bots:
+  count: 4
+  
+  # Bot Profiles
+  profiles:
+    bot1:
+      name: "HighFreq Pro"
+      strategy: "aggressive"
+      wallet_private_key: "${BOT1_PRIVATE_KEY}"
+      initial_balance_eth: 1.0
+      
+      # Latency Profile (milliseconds)
+      latency:
+        block_detection: 50
+        market_update: 100
+        calculation: 80
+        bundle_creation: 60
+        network_submission: 120
+        jitter: 0.1
+        
+      # Strategy Parameters
+      strategy_params:
+        bid_percentage: 85  # % of profit to bid for priority
+        min_profit_threshold: 0.001  # ETH
+        max_gas_limit: 1000000
+        aggressive_multiplier: 1.5
+        
+    bot2:
+      name: "Balanced Trader"
+      strategy: "conservative"
+      wallet_private_key: "${BOT2_PRIVATE_KEY}"
+      initial_balance_eth: 1.0
+      
+      latency:
+        block_detection: 150
+        market_update: 200
+        calculation: 180
+        bundle_creation: 120
+        network_submission: 250
+        jitter: 0.2
+        
+      strategy_params:
+        bid_percentage: 60
+        min_profit_threshold: 0.005
+        max_gas_limit: 800000
+        conservative_factor: 0.8
+        
+    bot3:
+      name: "Budget Operator"
+      strategy: "slow"
+      wallet_private_key: "${BOT3_PRIVATE_KEY}"
+      initial_balance_eth: 0.5
+      
+      latency:
+        block_detection: 300
+        market_update: 500
+        calculation: 400
+        bundle_creation: 250
+        network_submission: 600
+        jitter: 0.3
+        
+      strategy_params:
+        bid_percentage: 40
+        min_profit_threshold: 0.01
+        max_gas_limit: 500000
+        patience_factor: 2.0
+        
+    bot4:
+      name: "Adaptive AI"
+      strategy: "adaptive" 
+      wallet_private_key: "${BOT4_PRIVATE_KEY}"
+      initial_balance_eth: 1.5
+      
+      latency:
+        block_detection: 200
+        market_update: 300
+        calculation: 150
+        bundle_creation: 100
+        network_submission: 400
+        jitter: 0.5
+        
+      strategy_params:
+        bid_percentage: 70  # Adjusts based on competition
+        min_profit_threshold: 0.002
+        max_gas_limit: 1200000
+        learning_rate: 0.1
+        adaptation_window: 10
+
+# Pool Configuration
+pools:
+  # Token A Configuration
+  token_a:
+    name: "PaulKing"
+    symbol: "PKING"
+    decimals: 18
+    total_supply: 1000000
+    
+  # Token B Configuration  
+  token_b:
+    name: "PaulQueen"
+    symbol: "PQUEEN"
+    decimals: 18
+    total_supply: 1000000
+    
+  # Pool Settings
+  uniswap_v3:
+    fee_tier: 3000  # 0.3%
+    initial_price_ratio: "1:2"  # PKING:PQUEEN
+    tick_spacing: 60
+    
+    # Liquidity Configuration
+    liquidity:
+      amount_token_a: 1000
+      amount_token_b: 2000
+      price_range:
+        lower_tick: -887272  # Full range
+        upper_tick: 887272
+        
+# Victim Transaction Configuration
+victim_transactions:
+  enabled: true
+  count: 5  # Number of victim traders
+  
+  # Victim Trader Profiles
+  traders:
+    # Retail Trader - Small, frequent trades with high slippage tolerance
+    retail_alice:
+      type: "retail"
+      wallet_private_key: "${VICTIM1_PRIVATE_KEY}"
+      initial_balances:
+        PKING: 1000
+        PQUEEN: 500
+        ETH: 2.0
+      
+      # Custom pattern override (optional)
+      custom_pattern:
+        frequency_seconds: 240.0    # 4 minutes average
+        amount_range: [5, 50]       # Small trades
+        slippage_tolerance: 0.02    # 2% tolerance
+        gas_sensitivity: 0.8
+        patience_level: 0.3
+        token_preference: ["PKING", "PQUEEN"]
+    
+    # Whale Trader - Large, infrequent trades with low slippage tolerance  
+    whale_bob:
+      type: "whale"
+      wallet_private_key: "${VICTIM2_PRIVATE_KEY}"
+      initial_balances:
+        PKING: 10000
+        PQUEEN: 20000
+        ETH: 10.0
+      
+      custom_pattern:
+        frequency_seconds: 1800.0   # 30 minutes
+        amount_range: [200, 1000]   # Large trades
+        slippage_tolerance: 0.005   # 0.5% tolerance
+        gas_sensitivity: 0.1
+        patience_level: 0.8
+        token_preference: ["PKING", "PQUEEN"]
+    
+    # DCA Bot - Regular, consistent trades
+    dca_charlie:
+      type: "dca_bot" 
+      wallet_private_key: "${VICTIM3_PRIVATE_KEY}"
+      initial_balances:
+        PKING: 0
+        PQUEEN: 5000
+        ETH: 3.0
+      
+      custom_pattern:
+        frequency_seconds: 120.0    # 2 minutes (regular DCA)
+        amount_range: [25, 35]      # Consistent amounts
+        slippage_tolerance: 0.01    # 1% tolerance
+        gas_sensitivity: 0.5
+        patience_level: 0.9
+        token_preference: ["PKING"]  # DCA into PKING only
+    
+    # Arbitrage Bot - Fast, medium trades with tight slippage
+    arb_david:
+      type: "arbitrage_bot"
+      wallet_private_key: "${VICTIM4_PRIVATE_KEY}" 
+      initial_balances:
+        PKING: 2000
+        PQUEEN: 4000
+        ETH: 5.0
+      
+      custom_pattern:
+        frequency_seconds: 30.0     # 30 seconds (fast)
+        amount_range: [50, 200]     # Medium to large
+        slippage_tolerance: 0.003   # 0.3% tolerance (tight)
+        gas_sensitivity: 0.6
+        patience_level: 0.2
+        token_preference: ["PKING", "PQUEEN"]
+    
+    # Panic Seller - Sporadic, emotional trades with high slippage
+    panic_eve:
+      type: "panic_seller"
+      wallet_private_key: "${VICTIM5_PRIVATE_KEY}"
+      initial_balances:
+        PKING: 3000
+        PQUEEN: 1500
+        ETH: 2.0
+      
+      custom_pattern:
+        frequency_seconds: 900.0    # 15 minutes (sporadic)
+        amount_range: [100, 500]    # Large emotional trades
+        slippage_tolerance: 0.05    # 5% tolerance (high)
+        gas_sensitivity: 0.2
+        patience_level: 0.1
+        token_preference: ["PKING", "PQUEEN"]
+  
+  # Global victim settings
+  global_settings:
+    # Stress response - how victims react to MEV attacks
+    stress_response:
+      enabled: true
+      stress_decay_rate: 0.1      # How fast stress decreases over time
+      max_stress_level: 1.0       # Maximum stress level
+      stress_affects_frequency: true    # Stressed traders trade more
+      stress_affects_slippage: true     # Stressed traders accept more slippage
+    
+    # Market conditions that affect victim behavior
+    market_conditions:
+      volatility_multiplier: 1.0  # Affects trade frequency
+      gas_price_threshold: 500    # Gwei - above this, gas-sensitive traders pause
+      liquidity_threshold: 1000   # Min liquidity for trades
+    
+    # Victim learning (do they adapt to MEV attacks?)
+    learning:
+      enabled: false             # Whether victims learn from MEV attacks
+      learning_rate: 0.05        # How fast they adapt
+      memory_window: 10          # Number of recent trades to remember
+
+# MEV Analysis Configuration
+analysis:
+  metrics:
+    - "mev_profit"
+    - "victim_loss" 
+    - "slippage_amplification"
+    - "gas_cost_analysis"
+    - "success_rate"
+    - "latency_correlation"
+    - "value_destroyed"
+    - "extraction_efficiency"
+    
+  export:
+    csv_enabled: true
+    json_enabled: true
+    real_time_dashboard: false
+    
+  visualization:
+    charts:
+      - "profit_timeline"
+      - "latency_heatmap"
+      - "success_rate_by_bot"
+      - "slippage_distribution"
+      - "gas_vs_profit_scatter"
+
+# Revenue Sharing Simulation
+revenue_sharing:
+  enabled: false
+  model: "jito_like"  # Options: jito_like, flashbots_like, custom
+  
+  # Distribution Parameters
+  distribution:
+    validator_share: 0.5   # 50% to validator
+    user_share: 0.3        # 30% to affected users
+    protocol_share: 0.2    # 20% to protocol
+    
+  # User Protection
+  protection:
+    max_slippage_compensation: 0.05  # 5%
+    min_compensation_threshold: 0.001  # ETH
+
+# Advanced Features
+features:
+  flashbots_simulation: false
+  private_mempool: false
+  bundle_auction: true
+  cross_dex_arbitrage: false
+  
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_rotation: true
+  max_file_size_mb: 100
+  backup_count: 5

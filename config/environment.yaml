@@ -1,0 +1,152 @@
+# MEV-Simulator Environment Configuration
+# This file contains environment-specific settings
+
+# Development Environment (Anvil Local)
+development:
+  network:
+    name: "anvil_mainnet_fork"
+    rpc_url: "http://127.0.0.1:8545"
+    chain_id: 31337
+    block_time_ms: 1000
+    
+    # Mainnet Uniswap V3 Contract Addresses (via Anvil fork)
+    contracts:
+      uniswap_v3_factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      uniswap_v3_router: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"  # SwapRouter02
+      position_manager: "0xC36442b4c4e76c8f7a04B0eE0d2C2d4C6e5e4F2D"
+      quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"
+      weth9: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    
+  # Anvil default test accounts (safe to use)
+  accounts:
+    deployer:
+      private_key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+      address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    
+    mev_bots:
+      bot1:
+        private_key: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+        address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      bot2:
+        private_key: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
+        address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+      bot3:
+        private_key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"
+        address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      bot4:
+        private_key: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"
+        address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    
+    victims:
+      victim1:
+        private_key: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
+        address: "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      victim2:
+        private_key: "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e"
+        address: "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+      victim3:
+        private_key: "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356"
+        address: "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+      victim4:
+        private_key: "0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97"
+        address: "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+      victim5:
+        private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+        address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+
+# Arc Testnet Environment  
+arc_testnet:
+  network:
+    name: "arc_testnet"
+    rpc_url: "https://arc-testnet.stg.blockchain.circle.com"  # Working Arc Testnet STG URL
+    chain_id: 1337
+    block_time_ms: 500
+    
+    # Arc Testnet Successfully Deployed Addresses
+    contracts:
+      # Tokens (Previously deployed and tested)
+      paul_king_token: "0x6911406ae5C9fa9314B4AEc086304c001fb3b656"     # PaulKing Token
+      paul_queen_token: "0x3eaE1139A9A19517B0dB5696073d957542886BF8"    # PaulQueen Token
+      wusdc_native: "0x3600000000000000000000000000000000000000"        # Native USDC ERC20 interface
+      
+      # Pool & Router (Previously deployed and tested)
+      swap_router: "0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67"         # Custom Swap Router
+      uniswap_pool: "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"        # PaulKing/PaulQueen Pool
+      
+      # Standard Uniswap V3 Addresses (for compatibility)
+      uniswap_v3_factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984"  # Standard factory
+      uniswap_v3_router: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"   # SwapRouter02
+      position_manager: "0xC36442b4c4e76c8f7a04B0eE0d2C2d4C6e5e4F2D"     # PositionManager
+      quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"          # QuoterV2
+    
+  # Arc Testnet test accounts
+  accounts:
+    deployer:
+      private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+      address: "0x0cDCCD90Ec76f490e1495E0190FeCAaCe165254a"
+    
+    mev_bots:
+      bot1:
+        private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+        address: "0xF1f0b247Ec9d10B5410CC67d097CF099ebAD973d"
+      bot2:
+        private_key: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+        address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      bot3:
+        private_key: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
+        address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+      bot4:
+        private_key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"
+        address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    
+    victims:
+      victim1:
+        private_key: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
+        address: "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      victim2:
+        private_key: "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e"
+        address: "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+      victim3:
+        private_key: "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356"
+        address: "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+      victim4:
+        private_key: "0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97"
+        address: "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+      victim5:
+        private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+        address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+
+# Production Environment (Mainnet - USE WITH EXTREME CAUTION)
+production:
+  network:
+    name: "ethereum_mainnet"
+    rpc_url: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
+    chain_id: 1
+    block_time_ms: 12000
+    
+  # DO NOT COMMIT REAL MAINNET KEYS TO VERSION CONTROL!
+  accounts:
+    deployer:
+      private_key: "LOAD_FROM_SECURE_VAULT"
+      address: "LOAD_FROM_SECURE_VAULT"
+
+# Default environment selection
+default_environment: "arc_testnet"
+
+# Safety settings per environment
+safety:
+  development:
+    max_eth_per_account: 10.0
+    require_confirmation: false
+    enable_debug_logging: true
+    
+  arc_testnet:
+    max_eth_per_account: 1.0
+    require_confirmation: true
+    enable_debug_logging: true
+    
+  production:
+    max_eth_per_account: 0.01
+    require_confirmation: true
+    enable_debug_logging: false
+    additional_confirmations_required: 3
