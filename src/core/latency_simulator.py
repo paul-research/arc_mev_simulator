@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Latency simulation for realistic MEV bot competition modeling
 
@@ -386,4 +387,5 @@ if __name__ == "__main__":
     
     # Run the test
     asyncio.run(test_latency_simulation())
+
 

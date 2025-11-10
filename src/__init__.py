@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 MEV-Simulator: A Research Platform for Maximal Extractable Value Analysis
 
@@ -93,4 +94,5 @@ PACKAGE_INFO = {
     "url": "https://github.com/arc-research/mev-simulator",
     "keywords": ["MEV", "blockchain", "ethereum", "defi", "research", "simulation"]
 }
+
 

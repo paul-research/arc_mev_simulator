@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Smart Contract Deployment System
 
@@ -338,8 +339,8 @@ class ContractDeployer:
             # Default Arc Testnet addresses
             network_config = {
                 'contracts': {
-                    'paul_king_token': "0x6911406ae5C9fa9314B4AEc086304c001fb3b656",
-                    'paul_queen_token': "0x3eaE1139A9A19517B0dB5696073d957542886BF8",
+                    'token1_token': "0x6911406ae5C9fa9314B4AEc086304c001fb3b656",
+                    'token2_token': "0x3eaE1139A9A19517B0dB5696073d957542886BF8",
                     'wusdc_native': "0x3600000000000000000000000000000000000000",
                     'swap_router': "0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67",
                     'uniswap_pool': "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"
@@ -355,24 +356,24 @@ class ContractDeployer:
         # Connect to existing tokens
         logger.info("📝 Connecting to existing tokens...")
         
-        paul_king_addr = contracts.get('paul_king_token')
-        paul_queen_addr = contracts.get('paul_queen_token')
+        token1_addr = contracts.get('token1_token')
+        token2_addr = contracts.get('token2_token')
         
-        if not paul_king_addr or not paul_queen_addr:
+        if not token1_addr or not token2_addr:
             raise ValueError("Missing token addresses in network config")
         
         # Create contract instances for existing tokens
-        paul_king = self.w3.eth.contract(
-            address=paul_king_addr,
+        token1 = self.w3.eth.contract(
+            address=token1_addr,
             abi=ERC20_ABI
         )
-        paul_queen = self.w3.eth.contract(
-            address=paul_queen_addr,
+        token2 = self.w3.eth.contract(
+            address=token2_addr,
             abi=ERC20_ABI
         )
         
-        logger.info(f"✅ Connected to PaulKing token: {paul_king_addr}")
-        logger.info(f"✅ Connected to PaulQueen token: {paul_queen_addr}")
+        logger.info(f"✅ Connected to Token1 token: {token1_addr}")
+        logger.info(f"✅ Connected to Token2 token: {token2_addr}")
         
         # Connect to existing pool
         logger.info("🏊‍♂️ Connecting to existing Uniswap pool...")
@@ -402,21 +403,21 @@ class ContractDeployer:
         # Prepare return data
         environment = {
             'tokens': {
-                'paul_king': {
-                    'address': paul_king_addr,
-                    'contract': paul_king
+                'token1': {
+                    'address': token1_addr,
+                    'contract': token1
                 },
-                'paul_queen': {
-                    'address': paul_queen_addr,
-                    'contract': paul_queen
+                'token2': {
+                    'address': token2_addr,
+                    'contract': token2
                 }
             },
             'pools': {
                 'pking_pqueen': {
                     'address': pool_addr if pool_addr else "0x0000000000000000000000000000000000000000",
                     'contract': v3_pool,
-                    'token0': paul_king_addr,
-                    'token1': paul_queen_addr,
+                    'token0': token1_addr,
+                    'token1': token2_addr,
                     'fee': 3000
                 }
             },

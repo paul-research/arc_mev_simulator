@@ -1,5 +1,6 @@
 # MEV-Simulator Environment Configuration
-# This file contains environment-specific settings
+# Circle Research Team - paul.kwon@circle.com
+# This file contains environment-specific settings for PBS research
 
 # Development Environment (Anvil Local)
 development:
@@ -65,13 +66,13 @@ arc_testnet:
     # Arc Testnet Successfully Deployed Addresses
     contracts:
       # Tokens (Previously deployed and tested)
-      paul_king_token: "0x6911406ae5C9fa9314B4AEc086304c001fb3b656"     # PaulKing Token
-      paul_queen_token: "0x3eaE1139A9A19517B0dB5696073d957542886BF8"    # PaulQueen Token
+      token1_address: "0x6911406ae5C9fa9314B4AEc086304c001fb3b656"     # Token1 Token
+      token2_address: "0x3eaE1139A9A19517B0dB5696073d957542886BF8"    # Token2 Token
       wusdc_native: "0x3600000000000000000000000000000000000000"        # Native USDC ERC20 interface
       
       # Pool & Router (Previously deployed and tested)
       swap_router: "0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67"         # Custom Swap Router
-      uniswap_pool: "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"        # PaulKing/PaulQueen Pool
+      uniswap_pool: "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"        # Token1/Token2 Pool
       
       # Standard Uniswap V3 Addresses (for compatibility)
       uniswap_v3_factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984"  # Standard factory

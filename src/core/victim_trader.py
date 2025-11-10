@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Victim Trader Simulation for MEV Research
 
@@ -77,7 +78,7 @@ class VictimTrader:
             slippage_tolerance=0.02,  # 2% tolerance
             gas_sensitivity=0.8,      # Very sensitive to gas
             patience_level=0.3,       # Impatient
-            token_preference=["PKING", "PQUEEN"]
+            token_preference=["TOKEN1", "TOKEN2"]
         ),
         
         VictimType.WHALE: TradingPattern(
@@ -87,7 +88,7 @@ class VictimTrader:
             slippage_tolerance=0.012,  # 1.2% tolerance (increased for realistic trading)
             gas_sensitivity=0.1,       # Not sensitive to gas
             patience_level=0.8,        # Very patient
-            token_preference=["PKING", "PQUEEN"]
+            token_preference=["TOKEN1", "TOKEN2"]
         ),
         
         VictimType.DCA_BOT: TradingPattern(
@@ -97,7 +98,7 @@ class VictimTrader:
             slippage_tolerance=0.015,  # 1.5% tolerance (increased for realistic trading)
             gas_sensitivity=0.5,       # Moderate gas sensitivity
             patience_level=0.9,        # Very patient, waits for good prices
-            token_preference=["PKING"]
+            token_preference=["TOKEN1"]
         ),
         
         VictimType.ARBITRAGE_BOT: TradingPattern(
@@ -107,7 +108,7 @@ class VictimTrader:
             slippage_tolerance=0.008,   # 0.8% tolerance (increased for realistic trading)
             gas_sensitivity=0.6,        # Gas cost affects profitability
             patience_level=0.2,         # Very impatient, needs quick execution
-            token_preference=["PKING", "PQUEEN"]
+            token_preference=["TOKEN1", "TOKEN2"]
         ),
         
         VictimType.PANIC_SELLER: TradingPattern(
@@ -117,7 +118,7 @@ class VictimTrader:
             slippage_tolerance=0.05,    # 5% tolerance (high)
             gas_sensitivity=0.2,        # Don't care about gas when panicking
             patience_level=0.1,         # No patience, market sell
-            token_preference=["PKING", "PQUEEN"]
+            token_preference=["TOKEN1", "TOKEN2"]
         )
     }
     
@@ -569,17 +570,17 @@ if __name__ == "__main__":
             {
                 'victim_id': 'retail_alice',
                 'type': VictimType.RETAIL,
-                'initial_balances': {'PKING': 1000, 'PQUEEN': 500}
+                'initial_balances': {'TOKEN1': 1000, 'TOKEN2': 500}
             },
             {
                 'victim_id': 'whale_bob',
                 'type': VictimType.WHALE,
-                'initial_balances': {'PKING': 10000, 'PQUEEN': 20000}
+                'initial_balances': {'TOKEN1': 10000, 'TOKEN2': 20000}
             },
             {
                 'victim_id': 'dca_charlie',
                 'type': VictimType.DCA_BOT,
-                'initial_balances': {'PKING': 5000, 'PQUEEN': 0}
+                'initial_balances': {'TOKEN1': 5000, 'TOKEN2': 0}
             }
         ]
         
@@ -592,7 +593,7 @@ if __name__ == "__main__":
             print(f"Added {config['victim_id']} ({config['type'].value})")
         
         # Simulate trading over time
-        available_pools = ['PKING_PQUEEN_3000']
+        available_pools = ['TOKEN1_TOKEN2_3000']
         
         print("\n🎯 Simulating victim trading...")
         for round_num in range(5):

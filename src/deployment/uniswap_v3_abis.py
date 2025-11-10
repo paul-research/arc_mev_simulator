@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Uniswap V3 Contract ABIs
 
@@ -230,4 +231,5 @@ ERC20_ABI = [
         "type": "function"
     }
 ]
+
 

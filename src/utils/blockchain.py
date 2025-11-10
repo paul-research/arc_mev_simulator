@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Blockchain interaction utilities for MEV-Simulator
 

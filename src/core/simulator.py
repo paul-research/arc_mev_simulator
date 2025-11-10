@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 MEV Simulator - Main orchestration engine
 
@@ -178,34 +179,34 @@ class MEVSimulator:
         network_contracts = self.config['network'].get('contracts', {})
         
         # Check if we have existing token addresses
-        if 'paul_king_token' in network_contracts and 'paul_queen_token' in network_contracts:
+        if 'token1_token' in network_contracts and 'token2_token' in network_contracts:
             logger.info("📝 Using existing tokens from network config...")
             
             # Create TokenInfo objects for existing tokens
             from src.core.pool_manager import TokenInfo
             
-            paul_king_info = TokenInfo(
-                address=network_contracts['paul_king_token'],
-                name="PaulKing",
-                symbol="PKING",
+            token1_info = TokenInfo(
+                address=network_contracts['token1_token'],
+                name="Token1",
+                symbol="TOKEN1",
                 decimals=18,
                 total_supply=1000000
             )
             
-            paul_queen_info = TokenInfo(
-                address=network_contracts['paul_queen_token'],
-                name="PaulQueen", 
-                symbol="PQUEEN",
+            token2_info = TokenInfo(
+                address=network_contracts['token2_token'],
+                name="Token2", 
+                symbol="TOKEN2",
                 decimals=18,
                 total_supply=1000000
             )
             
             # Store in pool manager
-            self.pool_manager.deployed_tokens['PKING'] = paul_king_info
-            self.pool_manager.deployed_tokens['PQUEEN'] = paul_queen_info
+            self.pool_manager.deployed_tokens['TOKEN1'] = token1_info
+            self.pool_manager.deployed_tokens['TOKEN2'] = token2_info
             
-            logger.info(f"✅ Using existing PaulKing: {paul_king_info.address}")
-            logger.info(f"✅ Using existing PaulQueen: {paul_queen_info.address}")
+            logger.info(f"✅ Using existing Token1: {token1_info.address}")
+            logger.info(f"✅ Using existing Token2: {token2_info.address}")
             
         else:
             # Deploy new tokens
@@ -230,8 +231,8 @@ class MEVSimulator:
             logger.info(f"Deployed tokens: {token_a.symbol}, {token_b.symbol}")
         
         # Check if tokens are loaded (either existing or newly deployed)
-        if 'PKING' in self.pool_manager.deployed_tokens and 'PQUEEN' in self.pool_manager.deployed_tokens:
-            logger.info("✅ Tokens ready: PKING, PQUEEN")
+        if 'TOKEN1' in self.pool_manager.deployed_tokens and 'TOKEN2' in self.pool_manager.deployed_tokens:
+            logger.info("✅ Tokens ready: TOKEN1, TOKEN2")
         
         # Check if we have an existing pool
         if 'uniswap_pool' in network_contracts:
@@ -240,13 +241,13 @@ class MEVSimulator:
             # Create PoolInfo object for existing pool
             from src.core.pool_manager import PoolInfo
             
-            paul_king_info = self.pool_manager.deployed_tokens['PKING'] 
-            paul_queen_info = self.pool_manager.deployed_tokens['PQUEEN']
+            token1_info = self.pool_manager.deployed_tokens['TOKEN1'] 
+            token2_info = self.pool_manager.deployed_tokens['TOKEN2']
             
             existing_pool_info = PoolInfo(
                 address=network_contracts['uniswap_pool'],
-                token0=paul_king_info,
-                token1=paul_queen_info,
+                token0=token1_info,
+                token1=token2_info,
                 fee=3000,
                 tick_spacing=60,
                 current_tick=0,
@@ -255,7 +256,7 @@ class MEVSimulator:
             )
             
             # Store existing pool
-            pool_key = f"PKING_PQUEEN_3000"
+            pool_key = f"TOKEN1_TOKEN2_3000"
             self.pool_manager.created_pools[pool_key] = existing_pool_info
             
             # Connect real pool contract for blockchain queries
@@ -283,8 +284,8 @@ class MEVSimulator:
             logger.info("🏊‍♂️ Creating new Uniswap V3 pool...")
             pool_config = pools_config['uniswap_v3']
             pool_info = await self.pool_manager.create_pool(
-                "PKING",
-                "PQUEEN", 
+                "TOKEN1",
+                "TOKEN2", 
                 pool_config['fee_tier'],
                 pool_config['initial_price_ratio']
             )
@@ -292,7 +293,7 @@ class MEVSimulator:
             # Add initial liquidity
             liquidity_config = pool_config['liquidity']
             await self.pool_manager.add_liquidity(
-                f"PKING_PQUEEN_{pool_config['fee_tier']}",
+                f"TOKEN1_TOKEN2_{pool_config['fee_tier']}",
                 liquidity_config['amount_token_a'],
                 liquidity_config['amount_token_b']
             )
@@ -359,8 +360,8 @@ class MEVSimulator:
             # If no initial balances specified, use defaults
             if not initial_balances:
                 initial_balances = {
-                    'PKING': 1000.0,
-                    'PQUEEN': 1000.0,
+                    'TOKEN1': 1000.0,
+                    'TOKEN2': 1000.0,
                     'ETH': 5.0
                 }
             

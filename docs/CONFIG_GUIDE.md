@@ -84,8 +84,8 @@ victim_transactions:
       wallet_private_key: "${VICTIM1_PRIVATE_KEY}"
       
       initial_balances:
-        PKING: 1000
-        PQUEEN: 500
+        TOKEN1: 1000
+        TOKEN2: 500
         ETH: 2.0
       
       custom_pattern:
@@ -94,7 +94,7 @@ victim_transactions:
         slippage_tolerance: 0.02
         gas_sensitivity: 0.8
         patience_level: 0.3
-        token_preference: ["PKING", "PQUEEN"]
+        token_preference: ["TOKEN1", "TOKEN2"]
 ```
 
 **Victim Types:**
@@ -110,20 +110,20 @@ victim_transactions:
 ```yaml
 pools:
   token_a:
-    name: "PaulKing"
-    symbol: "PKING"
+    name: "Token1"
+    symbol: "TOKEN1"
     decimals: 18
     total_supply: 1000000
     
   token_b:
-    name: "PaulQueen"
-    symbol: "PQUEEN"
+    name: "Token2"
+    symbol: "TOKEN2"
     decimals: 18
     total_supply: 1000000
 
   uniswap_v3:
     fee_tier: 3000                      # 0.3% fee
-    initial_price_ratio: "1:2"          # PKING:PQUEEN = 1:2
+    initial_price_ratio: "1:2"          # TOKEN1:TOKEN2 = 1:2
     
     liquidity:
       amount_token_a: 1000

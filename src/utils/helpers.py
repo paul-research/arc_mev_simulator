@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Helper utilities for MEV-Simulator
 
@@ -521,4 +522,5 @@ if __name__ == "__main__":
         time.sleep(0.1)
     
     print("✅ All utility tests passed!")
+
 

@@ -1,10 +1,12 @@
 # MEV-Simulator Configuration
+# Circle Research Team
+# Contact: paul.kwon@circle.com
 # ==========================
 
 # Simulation General Settings
 simulation:
-  name: "mev_competition_analysis"
-  description: "Multi-bot MEV competition with latency simulation"
+  name: "mev_pbs_research"
+  description: "MEV research for PBS system evaluation - Circle Research"
   duration_minutes: 30
   target_transactions: 100
   output_dir: "data/results"
@@ -26,9 +28,16 @@ network:
     position_manager: "0xC36442b4c4e76c8f7a04B0eE0d2C2d4C6e5e4F2D"
     quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"
   
-# MEV Bot Configuration
+# MEV Bot Configuration (Traditional MEV - for comparison)
+# These bots execute sandwich attacks (front-run + back-run)
 mev_bots:
   count: 4
+  
+  # Attack Mode Configuration
+  attack_mode:
+    allow_frontrun: true         # Allow front-running attacks
+    allow_sandwich: true         # Allow full sandwich attacks
+    frontrun_only: false         # Set true to disable back-run (for PBS research)
   
   # Bot Profiles
   profiles:
@@ -119,22 +128,22 @@ mev_bots:
 pools:
   # Token A Configuration
   token_a:
-    name: "PaulKing"
-    symbol: "PKING"
+    name: "Token1"
+    symbol: "TOKEN1"
     decimals: 18
     total_supply: 1000000
     
   # Token B Configuration  
   token_b:
-    name: "PaulQueen"
-    symbol: "PQUEEN"
+    name: "Token2"
+    symbol: "TOKEN2"
     decimals: 18
     total_supply: 1000000
     
   # Pool Settings
   uniswap_v3:
     fee_tier: 3000  # 0.3%
-    initial_price_ratio: "1:2"  # PKING:PQUEEN
+    initial_price_ratio: "1:2"  # TOKEN1:TOKEN2
     tick_spacing: 60
     
     # Liquidity Configuration
@@ -157,8 +166,8 @@ victim_transactions:
       type: "retail"
       wallet_private_key: "${VICTIM1_PRIVATE_KEY}"
       initial_balances:
-        PKING: 1000
-        PQUEEN: 500
+        TOKEN1: 1000
+        TOKEN2: 500
         ETH: 2.0
       
       # Custom pattern override (optional)
@@ -168,15 +177,15 @@ victim_transactions:
         slippage_tolerance: 0.02    # 2% tolerance
         gas_sensitivity: 0.8
         patience_level: 0.3
-        token_preference: ["PKING", "PQUEEN"]
+        token_preference: ["TOKEN1", "TOKEN2"]
     
     # Whale Trader - Large, infrequent trades with low slippage tolerance  
     whale_bob:
       type: "whale"
       wallet_private_key: "${VICTIM2_PRIVATE_KEY}"
       initial_balances:
-        PKING: 10000
-        PQUEEN: 20000
+        TOKEN1: 10000
+        TOKEN2: 20000
         ETH: 10.0
       
       custom_pattern:
@@ -185,15 +194,15 @@ victim_transactions:
         slippage_tolerance: 0.005   # 0.5% tolerance
         gas_sensitivity: 0.1
         patience_level: 0.8
-        token_preference: ["PKING", "PQUEEN"]
+        token_preference: ["TOKEN1", "TOKEN2"]
     
     # DCA Bot - Regular, consistent trades
     dca_charlie:
       type: "dca_bot" 
       wallet_private_key: "${VICTIM3_PRIVATE_KEY}"
       initial_balances:
-        PKING: 0
-        PQUEEN: 5000
+        TOKEN1: 0
+        TOKEN2: 5000
         ETH: 3.0
       
       custom_pattern:
@@ -202,15 +211,15 @@ victim_transactions:
         slippage_tolerance: 0.01    # 1% tolerance
         gas_sensitivity: 0.5
         patience_level: 0.9
-        token_preference: ["PKING"]  # DCA into PKING only
+        token_preference: ["TOKEN1"]  # DCA into TOKEN1 only
     
     # Arbitrage Bot - Fast, medium trades with tight slippage
     arb_david:
       type: "arbitrage_bot"
       wallet_private_key: "${VICTIM4_PRIVATE_KEY}" 
       initial_balances:
-        PKING: 2000
-        PQUEEN: 4000
+        TOKEN1: 2000
+        TOKEN2: 4000
         ETH: 5.0
       
       custom_pattern:
@@ -219,15 +228,15 @@ victim_transactions:
         slippage_tolerance: 0.003   # 0.3% tolerance (tight)
         gas_sensitivity: 0.6
         patience_level: 0.2
-        token_preference: ["PKING", "PQUEEN"]
+        token_preference: ["TOKEN1", "TOKEN2"]
     
     # Panic Seller - Sporadic, emotional trades with high slippage
     panic_eve:
       type: "panic_seller"
       wallet_private_key: "${VICTIM5_PRIVATE_KEY}"
       initial_balances:
-        PKING: 3000
-        PQUEEN: 1500
+        TOKEN1: 3000
+        TOKEN2: 1500
         ETH: 2.0
       
       custom_pattern:
@@ -236,7 +245,7 @@ victim_transactions:
         slippage_tolerance: 0.05    # 5% tolerance (high)
         gas_sensitivity: 0.2
         patience_level: 0.1
-        token_preference: ["PKING", "PQUEEN"]
+        token_preference: ["TOKEN1", "TOKEN2"]
   
   # Global victim settings
   global_settings:
@@ -307,7 +316,56 @@ features:
   private_mempool: false
   bundle_auction: true
   cross_dex_arbitrage: false
+
+# Beneficial Bot Types - Backrun/Arbitrage Bots
+# These bots HELP market efficiency by correcting price deviations
+# Circle Research: Comparing harmful MEV (front-run) vs beneficial MEV (back-run)
+backrun_bots:
+  enabled: true
+  count: 2
+  description: "Arbitrage bots that correct price imbalances (beneficial MEV)"
   
+  bot_backrun_1:
+    name: "Arbitrage Keeper"
+    strategy: "backrun_arbitrage"
+    wallet_private_key: "${BACKRUN_BOT1_KEY}"
+    initial_balance_eth: 2.0
+    
+    strategy_params:
+      monitor_price_deviation: 0.003  # 0.3% deviation triggers arbitrage
+      max_position_size: 1000
+      min_profit_threshold: 0.01
+      speed: "fast"
+      only_backrun: true              # Never front-run, only correct prices
+      
+    latency:
+      block_detection: 100
+      calculation: 50
+      execution: 150
+      
+  bot_backrun_2:
+    name: "DEX Balancer"
+    strategy: "backrun_arbitrage"
+    wallet_private_key: "${BACKRUN_BOT2_KEY}"
+    initial_balance_eth: 1.5
+    
+    strategy_params:
+      monitor_price_deviation: 0.005  # 0.5% deviation
+      max_position_size: 500
+      min_profit_threshold: 0.005
+      speed: "medium"
+      only_backrun: true
+
+# PBS Research Configuration (Future Enhancement)
+# Circle Research: Evaluating PBS systems to eliminate front-running
+pbs_research:
+  enabled: false  # Set true when implementing full PBS system
+  future_enhancements:
+    - "Block builder integration"
+    - "MEV redistribution mechanisms"
+    - "User protection via PBS"
+    - "Front-run elimination analysis"
+
 # Logging Configuration
 logging:
   level: "INFO"

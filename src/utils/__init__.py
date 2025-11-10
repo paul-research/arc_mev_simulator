@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Utility functions and helpers for MEV-Simulator
 
@@ -48,4 +49,5 @@ __all__ = [
     "estimate_gas_price",
     "wait_for_transaction"
 ]
+
 

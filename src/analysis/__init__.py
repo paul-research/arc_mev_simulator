@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Analysis framework for MEV-Simulator
 
@@ -17,4 +18,5 @@ __all__ = [
     "MEVVisualizer", 
     "MEVReporter"
 ]
+
 

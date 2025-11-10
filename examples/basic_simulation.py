@@ -50,16 +50,16 @@ def create_basic_config():
                 "retail_victim": {
                     "type": "retail",
                     "initial_balances": {
-                        "PKING": 1000,
-                        "PQUEEN": 2000,
+                        "TOKEN1": 1000,
+                        "TOKEN2": 2000,
                         "ETH": 5.0
                     }
                 },
                 "whale_victim": {
                     "type": "whale", 
                     "initial_balances": {
-                        "PKING": 5000,
-                        "PQUEEN": 10000,
+                        "TOKEN1": 5000,
+                        "TOKEN2": 10000,
                         "ETH": 20.0
                     }
                 }
@@ -67,14 +67,14 @@ def create_basic_config():
         },
         "pools": {
             "token_a": {
-                "name": "PaulKing",
-                "symbol": "PKING",
+                "name": "Token1",
+                "symbol": "TOKEN1",
                 "decimals": 18,
                 "total_supply": 1000000
             },
             "token_b": {
-                "name": "PaulQueen",
-                "symbol": "PQUEEN", 
+                "name": "Token2",
+                "symbol": "TOKEN2", 
                 "decimals": 18,
                 "total_supply": 1000000
             },

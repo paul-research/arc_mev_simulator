@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 MEV Visualization Tools
 
@@ -37,4 +38,5 @@ class MEVVisualizer:
         
         # Placeholder implementation
         return "dashboard.html"
+
 

@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 MEV Report Generation
 
@@ -36,4 +37,5 @@ class MEVReporter:
         
         # Placeholder implementation
         return {}
+
 

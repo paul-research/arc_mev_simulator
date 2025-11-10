@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 MEV Analysis Engine
 

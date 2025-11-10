@@ -1,3 +1,4 @@
+# Circle Research Team - paul.kwon@circle.com
 """
 Uniswap V3 Pool Management and Interaction
 
@@ -530,7 +531,7 @@ class PoolManager:
                 # Swapping token0 for token1
                 current_price = pool_info.get_price_ratio()
                 if current_price == 0:
-                    # Use default 1:2 ratio (1 PKING = 2 PQUEEN)
+                    # Use default 1:2 ratio (1 TOKEN1 = 2 TOKEN2)
                     current_price = 2.0
                 amount_out_ideal = amount_in * current_price
                 
@@ -544,7 +545,7 @@ class PoolManager:
                 # Swapping token1 for token0
                 price_ratio = pool_info.get_price_ratio()
                 if price_ratio == 0:
-                    # Use default 1:2 ratio (1 PKING = 2 PQUEEN, so 2 PQUEEN = 0.5 PKING)
+                    # Use default 1:2 ratio (1 TOKEN1 = 2 TOKEN2, so 2 TOKEN2 = 0.5 TOKEN1)
                     current_price = 0.5
                 else:
                     current_price = 1 / price_ratio
@@ -819,34 +820,34 @@ if __name__ == "__main__":
             
             # Deploy test tokens
             print("\n📝 Deploying tokens...")
-            token_a = await pool_manager.deploy_token("PaulKing", "PKING", 1000000)
-            token_b = await pool_manager.deploy_token("PaulQueen", "PQUEEN", 1000000)
+            token_a = await pool_manager.deploy_token("Token1", "TOKEN1", 1000000)
+            token_b = await pool_manager.deploy_token("Token2", "TOKEN2", 1000000)
             
-            print(f"   PKING: {token_a.address}")
-            print(f"   PQUEEN: {token_b.address}")
+            print(f"   TOKEN1: {token_a.address}")
+            print(f"   TOKEN2: {token_b.address}")
             
             # Create pool
             print("\n🏊 Creating pool...")
-            pool_info = await pool_manager.create_pool("PKING", "PQUEEN", 3000, "1:2")
+            pool_info = await pool_manager.create_pool("TOKEN1", "TOKEN2", 3000, "1:2")
             print(f"   Pool: {pool_info.address}")
             print(f"   Price ratio: {pool_info.get_price_ratio():.6f}")
             
             # Add liquidity  
             print("\n💧 Adding liquidity...")
-            liq_result = await pool_manager.add_liquidity("PKING_PQUEEN_3000", 1000, 2000)
+            liq_result = await pool_manager.add_liquidity("TOKEN1_TOKEN2_3000", 1000, 2000)
             print(f"   Added: {liq_result['amount0_added']} + {liq_result['amount1_added']}")
             print(f"   Liquidity: {liq_result['liquidity_minted']}")
             
             # Simulate swap
             print("\n🔄 Simulating swap...")
-            swap_sim = await pool_manager.simulate_swap("PKING_PQUEEN_3000", "PKING", 50)
-            print(f"   50 PKING -> {swap_sim['amount_out']:.6f} PQUEEN")
+            swap_sim = await pool_manager.simulate_swap("TOKEN1_TOKEN2_3000", "TOKEN1", 50)
+            print(f"   50 TOKEN1 -> {swap_sim['amount_out']:.6f} TOKEN2")
             print(f"   Slippage: {swap_sim['slippage']:.3%}")
             
             # Execute swap
             print("\n⚡ Executing swap...")
             swap_result = await pool_manager.execute_swap(
-                "PKING_PQUEEN_3000", "PKING", 30, swap_sim['amount_out'] * 0.95, 
+                "TOKEN1_TOKEN2_3000", "TOKEN1", 30, swap_sim['amount_out'] * 0.95, 
                 "0x742d35Cc6634C0532925a3b8D7cf460000000000"
             )
             print(f"   TX: {swap_result.tx_hash}")
@@ -855,7 +856,7 @@ if __name__ == "__main__":
             
             # Show final pool state
             print("\n📊 Final pool state:")
-            pool_state = pool_manager.get_pool_state("PKING_PQUEEN_3000")
+            pool_state = pool_manager.get_pool_state("TOKEN1_TOKEN2_3000")
             print(f"   Price ratio: {pool_state['current_price_ratio']:.6f}")
             print(f"   Liquidity: {pool_state['liquidity']}")
             
