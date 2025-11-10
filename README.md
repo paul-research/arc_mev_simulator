@@ -1,44 +1,12 @@
 # MEV-Simulator
 
-MEV research platform for PBS evaluation.
-
-**Circle Research**  
-paul.kwon@circle.com
+PBS research platform - Circle Research (paul.kwon@circle.com)
 
 ## Objective
 
 Evaluate PBS effectiveness: eliminate front-running while preserving beneficial arbitrage.
 
-## Features
-
-- Real Uniswap V3 on Arc Testnet
-- MEV bot strategies: Aggressive, Conservative, Slow, Adaptive
-- Backrun bots: Beneficial arbitrage
-- Front-run only mode for PBS research
-- Victim profiles: Retail, Whale, DCA, Arbitrage, Panic
-- Latency modeling
-- CSV/JSON analysis
-
-## MEV Types
-
-### Harmful (Eliminate)
-- Front-running
-- Sandwich attacks
-
-### Beneficial (Preserve)
-- Backrun/Arbitrage
-- Liquidations
-- Rebalancing
-
-## Latest Results
-
-```
-MEV Profit: 34.02 USDC
-Victim Loss: 43.01 USDC  
-Success Rate: 81.6%
-```
-
-## Installation
+## Quick Start
 
 ```bash
 git clone https://github.com/paul-research/arc_mev_simulator.git
@@ -46,72 +14,63 @@ cd MEV-simulator
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
-## Usage
-
-### Arc Testnet
-
-```bash
 export DEPLOYER_PRIVATE_KEY="your_key"
 python scripts/run_complete_simulation.py -e arc_testnet -q --confirm
 ```
 
-### Development (Local Anvil)
+## Configuration
 
-```bash
-anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/demo --chain-id 31337
-python scripts/run_complete_simulation.py -e development -q
-```
-
-### PBS Research Mode
-
+### Attack Mode (MEV Bots)
 ```yaml
 # config/config.yaml
 mev_bots:
   attack_mode:
-    frontrun_only: true  # Disable back-run for comparison
+    frontrun_only: false  # true = disable backrun (PBS mode)
 ```
 
-## Configuration
+### Backrun Bots (Beneficial)
+```yaml
+backrun_bots:
+  enabled: true  # Price restoration bots
+  bot_backrun_1:
+    strategy_params:
+      monitor_price_deviation: 0.003  # 0.3% trigger
+```
 
-### Network
+## Research Scenarios
+
+### 1. Full Sandwich (Baseline)
+```yaml
+mev_bots.attack_mode.frontrun_only: false
+backrun_bots.enabled: true
+```
+
+### 2. PBS Simulation
+```yaml
+mev_bots.attack_mode.frontrun_only: true
+backrun_bots.enabled: true
+```
+
+### 3. Ideal PBS
+```yaml
+mev_bots.enabled: false
+backrun_bots.enabled: true
+```
+
+## Network Config
 
 ```yaml
 # config/environment.yaml
 arc_testnet:
   rpc_url: "https://arc-testnet.stg.blockchain.circle.com"
-  chain_id: 1337
   contracts:
     token1_address: "0x6911406ae5C9fa9314B4AEc086304c001fb3b656"
     token2_address: "0x3eaE1139A9A19517B0dB5696073d957542886BF8"
     uniswap_pool: "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"
 ```
 
-### Attack Mode
-
-```yaml
-# config/config.yaml
-mev_bots:
-  attack_mode:
-    allow_frontrun: true
-    allow_sandwich: true
-    frontrun_only: false
-```
-
-## Architecture
-
-```
-MEV-Simulator/
-├── config/          # Settings
-├── src/
-│   ├── core/        # Simulation engine
-│   ├── deployment/  # Contract deployment
-│   └── analysis/    # Result analysis
-└── scripts/         # Execution scripts
-```
-
-## Analysis
+## Results
 
 ```python
 import pandas as pd
@@ -120,23 +79,9 @@ print(f"MEV Profit: {df['mev_profit'].sum():.2f} USDC")
 print(f"Victim Loss: {df['victim_loss'].sum():.2f} USDC")
 ```
 
-## Research Applications
-
-- PBS front-run elimination measurement
-- User protection quantification
-- Harmful vs beneficial MEV separation
-- Builder system design
-
 ## Documentation
 
-- `docs/CONFIG_GUIDE.md` - Configuration
-- `docs/ARCHITECTURE.md` - Technical details
-
-## Contact
-
-paul.kwon@circle.com
-
-**Circle Research**
+- `docs/BACKRUN_CONFIG.md` - Backrun bot details
 
 ## License
 

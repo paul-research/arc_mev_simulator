@@ -353,10 +353,10 @@ class ContractDeployer:
         logger.info(f"Deployer balance: {balance:.6f} USDC")
         
         # Connect to existing tokens
-        logger.info("📝 Connecting to existing tokens...")
+        logger.info("Connecting to existing tokens...")
         
-        token1_addr = contracts.get('token1_token')
-        token2_addr = contracts.get('token2_token')
+        token1_addr = contracts.get('token1_address')
+        token2_addr = contracts.get('token2_address')
         
         if not token1_addr or not token2_addr:
             raise ValueError("Missing token addresses in network config")
