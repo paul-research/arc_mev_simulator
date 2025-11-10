@@ -1,6 +1,5 @@
-# MEV-Simulator Environment Configuration
-# Circle Research Team - paul.kwon@circle.com
-# This file contains environment-specific settings for PBS research
+# MEV-Simulator Environment
+# paul.kwon@circle.com
 
 # Development Environment (Anvil Local)
 development:

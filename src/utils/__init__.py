@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 Utility functions and helpers for MEV-Simulator
 

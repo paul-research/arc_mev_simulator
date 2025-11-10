@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 Uniswap V3 Pool Management and Interaction
 

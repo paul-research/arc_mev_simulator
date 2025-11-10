@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 MEV-Simulator: A Research Platform for Maximal Extractable Value Analysis
 

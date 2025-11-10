@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 Victim Trader Simulation for MEV Research
 

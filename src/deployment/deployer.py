@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 Smart Contract Deployment System
 

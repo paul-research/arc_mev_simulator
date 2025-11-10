@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 MEV Bot implementation with strategy patterns and competition logic
 

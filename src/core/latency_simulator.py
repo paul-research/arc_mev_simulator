@@ -1,4 +1,3 @@
-# Circle Research Team - paul.kwon@circle.com
 """
 Latency simulation for realistic MEV bot competition modeling
 
