@@ -98,7 +98,7 @@ class BackrunBot:
             swap_params = {
                 'tokenIn': token_in,
                 'tokenOut': token_out,
-                'fee': 3000,
+                'fee': 100,  # 0.01% fee tier (matches arc_test pool)
                 'recipient': self.account.address,
                 'amountIn': amount_wei,
                 'amountOutMinimum': 0,
@@ -237,7 +237,7 @@ async def main():
     
     token1_addr = w3.to_checksum_address("0x6911406ae5C9fa9314B4AEc086304c001fb3b656")
     token2_addr = w3.to_checksum_address("0x3eaE1139A9A19517B0dB5696073d957542886BF8")
-    pool_addr = w3.to_checksum_address("0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6")
+    pool_addr = w3.to_checksum_address("0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6")  # ACTUAL working pool!
     swap_router_addr = w3.to_checksum_address("0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67")
     
     bot = BackrunBot(
