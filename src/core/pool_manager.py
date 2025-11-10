@@ -586,9 +586,10 @@ class PoolManager:
                           token_in_symbol: str,
                           amount_in: float,
                           min_amount_out: float,
-                          trader_address: str) -> SwapResult:
+                          trader_address: str,
+                          trader_private_key: str) -> SwapResult:
         """
-        Execute a swap transaction
+        Execute actual swap transaction on blockchain
         
         Args:
             pool_key: Pool identifier
@@ -596,6 +597,7 @@ class PoolManager:
             amount_in: Input amount
             min_amount_out: Minimum acceptable output
             trader_address: Address executing the swap
+            trader_private_key: Private key for signing
             
         Returns:
             SwapResult with execution details
@@ -605,29 +607,93 @@ class PoolManager:
             simulation = await self.simulate_swap(pool_key, token_in_symbol, amount_in)
             
             if simulation['amount_out'] < min_amount_out:
-                raise ValueError(f"Output {simulation['amount_out']} below minimum {min_amount_out}")
+                raise ValueError(f"Slippage {simulation['slippage']*100:.3f}% exceeds tolerance")
             
             pool_info = self.created_pools[pool_key]
             
-            # Execute the swap (simplified - in real implementation would send tx)
-            tx_hash = f"0x{hash(f'swap_{pool_key}_{trader_address}_{amount_in}'):064x}"[2:66]
-            
-            # Update pool state
+            # Determine token in/out
             is_token0_in = (token_in_symbol == pool_info.token0.symbol)
+            token_in_address = self.deployer.w3.to_checksum_address(pool_info.token0.address if is_token0_in else pool_info.token1.address)
+            token_out_address = self.deployer.w3.to_checksum_address(pool_info.token1.address if is_token0_in else pool_info.token0.address)
             
-            if is_token0_in:
-                # Update sqrt_price_x96 based on swap
-                new_ratio = pool_info.get_price_ratio() * (1 + simulation['price_impact'])
-                pool_info.sqrt_price_x96 = int(math.sqrt(new_ratio) * (2 ** 96))
-            else:
-                new_ratio = pool_info.get_price_ratio() * (1 - simulation['price_impact'])
-                pool_info.sqrt_price_x96 = int(math.sqrt(new_ratio) * (2 ** 96))
+            # Convert to wei
+            token_in_decimals = pool_info.token0.decimals if is_token0_in else pool_info.token1.decimals
+            amount_in_wei = int(amount_in * (10 ** token_in_decimals))
+            min_amount_out_wei = int(min_amount_out * (10 ** token_in_decimals))
             
-            # Estimate gas cost
-            gas_used = 150000  # Typical DEX swap gas
-            # Use default gas price if not configured
-            gas_price_gwei = self.network_config.get('gas_price_gwei', 300)  # Default 300 gwei
-            gas_cost = gas_used * gas_price_gwei / 10**9  # Convert to USDC
+            # Get swap router
+            swap_router_address = self.network_config.get('contracts', {}).get('uniswap_v3_router')
+            if not swap_router_address:
+                raise ValueError("Swap router address not found in config")
+            swap_router_address = self.deployer.w3.to_checksum_address(swap_router_address)
+            
+            # Step 1: Approve token
+            token_contract = self.deployer.w3.eth.contract(address=token_in_address, abi=ERC20_ABI)
+            
+            # Check current allowance
+            current_allowance = token_contract.functions.allowance(trader_address, swap_router_address).call()
+            
+            if current_allowance < amount_in_wei:
+                logger.info(f"Approving {amount_in} {token_in_symbol}...")
+                
+                nonce = self.deployer.w3.eth.get_transaction_count(trader_address)
+                approve_tx = token_contract.functions.approve(
+                    swap_router_address,
+                    amount_in_wei
+                ).build_transaction({
+                    'from': trader_address,
+                    'nonce': nonce,
+                    'gas': 100000,
+                    'maxFeePerGas': self.deployer.w3.to_wei(400, 'gwei'),
+                    'maxPriorityFeePerGas': self.deployer.w3.to_wei(80, 'gwei'),
+                })
+                
+                signed_approve = self.deployer.w3.eth.account.sign_transaction(approve_tx, trader_private_key)
+                approve_hash = self.deployer.w3.eth.send_raw_transaction(signed_approve.raw_transaction)
+                approve_receipt = self.deployer.w3.eth.wait_for_transaction_receipt(approve_hash, timeout=120)
+                
+                if approve_receipt['status'] != 1:
+                    raise ValueError("Approve transaction failed")
+            
+            # Step 2: Execute swap
+            swap_router = self.deployer.w3.eth.contract(address=swap_router_address, abi=SWAP_ROUTER_ABI)
+            
+            swap_params = {
+                'tokenIn': token_in_address,
+                'tokenOut': token_out_address,
+                'fee': pool_info.fee,
+                'recipient': trader_address,
+                'amountIn': amount_in_wei,
+                'amountOutMinimum': 0,  # Set to 0 for testing, use min_amount_out_wei in production
+                'sqrtPriceLimitX96': 0
+            }
+            
+            nonce = self.deployer.w3.eth.get_transaction_count(trader_address)
+            swap_tx = swap_router.functions.exactInputSingle(swap_params).build_transaction({
+                'from': trader_address,
+                'nonce': nonce,
+                'gas': 800000,
+                'maxFeePerGas': self.deployer.w3.to_wei(350, 'gwei'),
+                'maxPriorityFeePerGas': self.deployer.w3.to_wei(70, 'gwei'),
+            })
+            
+            signed_swap = self.deployer.w3.eth.account.sign_transaction(swap_tx, trader_private_key)
+            swap_hash = self.deployer.w3.eth.send_raw_transaction(signed_swap.raw_transaction)
+            tx_hash = swap_hash.hex()
+            
+            logger.info(f"Swap TX submitted: {tx_hash[:10]}...")
+            
+            swap_receipt = self.deployer.w3.eth.wait_for_transaction_receipt(swap_hash, timeout=120)
+            
+            if swap_receipt['status'] != 1:
+                raise ValueError("Swap transaction failed")
+            
+            # Calculate actual gas cost
+            gas_used = swap_receipt['gasUsed']
+            gas_price = swap_receipt['effectiveGasPrice']
+            gas_cost_wei = gas_used * gas_price
+            gas_cost_eth = self.deployer.w3.from_wei(gas_cost_wei, 'ether')
+            gas_cost_usd = float(gas_cost_eth) * 3000  # Assume ETH = $3000
             
             result = SwapResult(
                 tx_hash=tx_hash,
@@ -637,7 +703,7 @@ class PoolManager:
                 amount_out_expected=simulation['amount_out_ideal'],
                 slippage=simulation['slippage'],
                 gas_used=gas_used,
-                gas_cost=gas_cost,
+                gas_cost=gas_cost_usd,
                 price_impact=simulation['price_impact']
             )
             

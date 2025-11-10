@@ -125,6 +125,7 @@ class VictimTrader:
                  victim_id: str,
                  victim_type: VictimType,
                  wallet_address: str,
+                 wallet_private_key: str,
                  initial_balances: Dict[str, float],
                  custom_pattern: Optional[TradingPattern] = None):
         """
@@ -134,12 +135,14 @@ class VictimTrader:
             victim_id: Unique identifier
             victim_type: Type of victim trader
             wallet_address: Wallet address
+            wallet_private_key: Private key for signing transactions
             initial_balances: Initial token balances
             custom_pattern: Custom trading pattern override
         """
         self.victim_id = victim_id
         self.victim_type = victim_type
         self.wallet_address = wallet_address
+        self.wallet_private_key = wallet_private_key
         self.initial_balances = initial_balances  # Store for reference
         self.balances = initial_balances.copy()
         
@@ -348,7 +351,8 @@ class VictimTrader:
                 trade.token_in_symbol,
                 trade.amount_in,
                 simulation['amount_out'] * 0.99,  # 1% buffer
-                self.wallet_address
+                self.wallet_address,
+                self.wallet_private_key
             )
             
             # Update trade with results
@@ -538,14 +542,23 @@ def create_victim_trader_from_config(victim_config: Dict[str, Any]) -> VictimTra
     
     # Custom pattern if specified
     custom_pattern = None
-    if 'pattern' in victim_config:
-        pattern_config = victim_config['pattern']
-        custom_pattern = TradingPattern(**pattern_config)
+    if 'custom_pattern' in victim_config:
+        pattern_config = victim_config['custom_pattern']
+        custom_pattern = TradingPattern(
+            name=pattern_config.get('name', 'Custom'),
+            frequency_seconds=pattern_config.get('frequency_seconds', 300.0),
+            amount_range=tuple(pattern_config.get('amount_range', [5, 50])),
+            slippage_tolerance=pattern_config.get('slippage_tolerance', 0.01),
+            gas_sensitivity=pattern_config.get('gas_sensitivity', 0.5),
+            patience_level=pattern_config.get('patience_level', 0.5),
+            token_preference=pattern_config.get('token_preference', ["TOKEN1", "TOKEN2"])
+        )
     
     trader = VictimTrader(
         victim_id=victim_config['victim_id'],
         victim_type=victim_type,
         wallet_address=victim_config.get('wallet_address', f"0x{hash(victim_config['victim_id']):040x}"[2:42]),
+        wallet_private_key=victim_config.get('wallet_private_key', '0x' + '0' * 64),
         initial_balances=victim_config.get('initial_balances', {}),
         custom_pattern=custom_pattern
     )

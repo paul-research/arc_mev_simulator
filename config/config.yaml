@@ -3,8 +3,8 @@
 
 simulation:
   name: "mev_frontrun_simulation"
-  duration_minutes: 30
-  target_transactions: 100
+  duration_minutes: 60
+  target_transactions: 300
   output_dir: "data/results"
   log_level: "INFO"
   
@@ -151,94 +151,25 @@ pools:
 # Victim Transaction Configuration
 victim_transactions:
   enabled: true
-  count: 5  # Number of victim traders
+  count: 1  # Single victim trader
   
   # Victim Trader Profiles
   traders:
-    # Retail Trader - Small, frequent trades with high slippage tolerance
+    # Retail Trader - Standard user making regular swaps
     retail_alice:
       type: "retail"
       wallet_private_key: "${VICTIM1_PRIVATE_KEY}"
       initial_balances:
-        TOKEN1: 1000
-        TOKEN2: 500
-        ETH: 2.0
-      
-      # Custom pattern override (optional)
-      custom_pattern:
-        frequency_seconds: 240.0    # 4 minutes average
-        amount_range: [5, 50]       # Small trades
-        slippage_tolerance: 0.02    # 2% tolerance
-        gas_sensitivity: 0.8
-        patience_level: 0.3
-        token_preference: ["TOKEN1", "TOKEN2"]
-    
-    # Whale Trader - Large, infrequent trades with low slippage tolerance  
-    whale_bob:
-      type: "whale"
-      wallet_private_key: "${VICTIM2_PRIVATE_KEY}"
-      initial_balances:
-        TOKEN1: 10000
-        TOKEN2: 20000
-        ETH: 10.0
-      
-      custom_pattern:
-        frequency_seconds: 1800.0   # 30 minutes
-        amount_range: [200, 1000]   # Large trades
-        slippage_tolerance: 0.005   # 0.5% tolerance
-        gas_sensitivity: 0.1
-        patience_level: 0.8
-        token_preference: ["TOKEN1", "TOKEN2"]
-    
-    # DCA Bot - Regular, consistent trades
-    dca_charlie:
-      type: "dca_bot" 
-      wallet_private_key: "${VICTIM3_PRIVATE_KEY}"
-      initial_balances:
-        TOKEN1: 0
-        TOKEN2: 5000
-        ETH: 3.0
-      
-      custom_pattern:
-        frequency_seconds: 120.0    # 2 minutes (regular DCA)
-        amount_range: [25, 35]      # Consistent amounts
-        slippage_tolerance: 0.01    # 1% tolerance
-        gas_sensitivity: 0.5
-        patience_level: 0.9
-        token_preference: ["TOKEN1"]  # DCA into TOKEN1 only
-    
-    # Arbitrage Bot - Fast, medium trades with tight slippage
-    arb_david:
-      type: "arbitrage_bot"
-      wallet_private_key: "${VICTIM4_PRIVATE_KEY}" 
-      initial_balances:
-        TOKEN1: 2000
-        TOKEN2: 4000
+        TOKEN1: 5000
+        TOKEN2: 10000
         ETH: 5.0
       
       custom_pattern:
-        frequency_seconds: 30.0     # 30 seconds (fast)
-        amount_range: [50, 200]     # Medium to large
-        slippage_tolerance: 0.003   # 0.3% tolerance (tight)
-        gas_sensitivity: 0.6
-        patience_level: 0.2
-        token_preference: ["TOKEN1", "TOKEN2"]
-    
-    # Panic Seller - Sporadic, emotional trades with high slippage
-    panic_eve:
-      type: "panic_seller"
-      wallet_private_key: "${VICTIM5_PRIVATE_KEY}"
-      initial_balances:
-        TOKEN1: 3000
-        TOKEN2: 1500
-        ETH: 2.0
-      
-      custom_pattern:
-        frequency_seconds: 900.0    # 15 minutes (sporadic)
-        amount_range: [100, 500]    # Large emotional trades
-        slippage_tolerance: 0.05    # 5% tolerance (high)
-        gas_sensitivity: 0.2
-        patience_level: 0.1
+        frequency_seconds: 60.0         # 1 minute between trades
+        amount_range: [50, 500]         # Mix of small to large trades
+        slippage_tolerance: 0.01        # 1% tolerance
+        gas_sensitivity: 0.5
+        patience_level: 0.5
         token_preference: ["TOKEN1", "TOKEN2"]
   
   # Global victim settings

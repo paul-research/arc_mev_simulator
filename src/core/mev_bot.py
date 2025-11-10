@@ -229,6 +229,7 @@ class MEVBot:
                  strategy_type: BotStrategy,
                  latency_simulator: LatencySimulator,
                  wallet_address: str,
+                 wallet_private_key: str,
                  initial_balance: float,
                  strategy_params: Optional[Dict[str, Any]] = None):
         """
@@ -239,6 +240,7 @@ class MEVBot:
             strategy_type: Bot strategy type
             latency_simulator: Latency simulation engine
             wallet_address: Bot's wallet address
+            wallet_private_key: Private key for signing transactions
             initial_balance: Starting balance in USDC
             strategy_params: Strategy-specific parameters
         """
@@ -246,6 +248,7 @@ class MEVBot:
         self.strategy_type = strategy_type
         self.latency_simulator = latency_simulator
         self.wallet_address = wallet_address
+        self.wallet_private_key = wallet_private_key
         self.initial_balance = initial_balance
         self.current_balance = initial_balance
         

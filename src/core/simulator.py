@@ -134,191 +134,85 @@ class MEVSimulator:
         logger.info("✅ MEV simulation setup complete")
     
     async def _setup_pools(self) -> None:
-        """Setup pool manager and deploy tokens/pools"""
+        """Setup pool manager using existing deployed contracts"""
         logger.info("🏊‍♂️ Setting up pools and tokens...")
         
-        # Get network config and deployer key
         network_config = self.config['network']
-        deployer_key = os.getenv('DEPLOYER_PRIVATE_KEY', "0x" + "1" * 64)
+        deployer_key = os.getenv('DEPLOYER_PRIVATE_KEY')
+        if not deployer_key:
+            raise ValueError("DEPLOYER_PRIVATE_KEY required")
         
-        # Try real deployment first, fallback to mock if needed
-        try:
-            # Import deployment system
-            from ..deployment.deployer import ContractDeployer
-            from ..utils.blockchain import connect_to_network
-            
-            # Connect to real blockchain
-            blockchain_client = connect_to_network(network_config)
-            connected = await blockchain_client.connect()
-            
-            if connected:
-                logger.info("✅ Connected to real blockchain - using actual contracts")
-                
-                # Create real deployer
-                deployer = ContractDeployer(blockchain_client, deployer_key)
-                
-                # Create pool manager with real web3
-                from .pool_manager import PoolManager
-                self.pool_manager = PoolManager(blockchain_client.w3, network_config, deployer_key)
-                self.pool_manager.deployer = deployer  # Connect real deployer
-                
-            else:
-                raise ConnectionError("Failed to connect to blockchain")
-                
-        except Exception as e:
-            logger.warning(f"Failed to connect to real blockchain: {e}")
-            logger.info("🔄 Falling back to simulation mode")
-            
-            # Fallback to mock implementation for testing
-            from unittest.mock import MagicMock
-            mock_web3 = MagicMock()
-            mock_web3.is_connected.return_value = True
-            
-            from .pool_manager import PoolManager
-            self.pool_manager = PoolManager(mock_web3, network_config, deployer_key)
+        # Connect to blockchain
+        from ..deployment.deployer import ContractDeployer
+        from ..utils.blockchain import connect_to_network
         
-        # Use existing tokens from network config if available
-        pools_config = self.config['pools']
-        network_contracts = self.config['network'].get('contracts', {})
+        blockchain_client = connect_to_network(network_config)
+        if not await blockchain_client.connect():
+            raise ConnectionError("Failed to connect to blockchain")
         
-        # Check if we have existing token addresses
-        if 'token1_token' in network_contracts and 'token2_token' in network_contracts:
-            logger.info("📝 Using existing tokens from network config...")
-            
-            # Create TokenInfo objects for existing tokens
-            from src.core.pool_manager import TokenInfo
-            
-            token1_info = TokenInfo(
-                address=network_contracts['token1_token'],
-                name="Token1",
-                symbol="TOKEN1",
-                decimals=18,
-                total_supply=1000000
-            )
-            
-            token2_info = TokenInfo(
-                address=network_contracts['token2_token'],
-                name="Token2", 
-                symbol="TOKEN2",
-                decimals=18,
-                total_supply=1000000
-            )
-            
-            # Store in pool manager
-            self.pool_manager.deployed_tokens['TOKEN1'] = token1_info
-            self.pool_manager.deployed_tokens['TOKEN2'] = token2_info
-            
-            logger.info(f"✅ Using existing Token1: {token1_info.address}")
-            logger.info(f"✅ Using existing Token2: {token2_info.address}")
-            
-        else:
-            # Deploy new tokens
-            logger.info("📝 Deploying new tokens...")
-            token_a_config = pools_config['token_a']
-            token_b_config = pools_config['token_b']
-            
-            token_a = await self.pool_manager.deploy_token(
-                token_a_config['name'],
-                token_a_config['symbol'],
-                token_a_config['total_supply'],
-                token_a_config['decimals']
-            )
-            
-            token_b = await self.pool_manager.deploy_token(
-                token_b_config['name'],
-                token_b_config['symbol'], 
-                token_b_config['total_supply'],
-                token_b_config['decimals']
-            )
-            
-            logger.info(f"Deployed tokens: {token_a.symbol}, {token_b.symbol}")
+        logger.info("✅ Connected to blockchain")
         
-        # Check if tokens are loaded (either existing or newly deployed)
-        if 'TOKEN1' in self.pool_manager.deployed_tokens and 'TOKEN2' in self.pool_manager.deployed_tokens:
-            logger.info("✅ Tokens ready: TOKEN1, TOKEN2")
+        # Setup deployer and pool manager
+        deployer = ContractDeployer(blockchain_client, deployer_key)
+        from .pool_manager import PoolManager
+        self.pool_manager = PoolManager(blockchain_client.w3, network_config, deployer_key)
+        self.pool_manager.deployer = deployer
         
-        # Check if we have an existing pool
-        if 'uniswap_pool' in network_contracts:
-            logger.info("🏊‍♂️ Using existing Uniswap V3 pool...")
-            
-            # Create PoolInfo object for existing pool
-            from src.core.pool_manager import PoolInfo
-            
-            token1_info = self.pool_manager.deployed_tokens['TOKEN1'] 
-            token2_info = self.pool_manager.deployed_tokens['TOKEN2']
-            
-            existing_pool_info = PoolInfo(
-                address=network_contracts['uniswap_pool'],
-                token0=token1_info,
-                token1=token2_info,
-                fee=3000,
-                tick_spacing=60,
-                current_tick=0,
-                sqrt_price_x96=0,  # Will be updated when queried
-                liquidity=0  # Will be updated when queried
-            )
-            
-            # Store existing pool
-            pool_key = f"TOKEN1_TOKEN2_3000"
-            self.pool_manager.created_pools[pool_key] = existing_pool_info
-            
-            # Connect real pool contract for blockchain queries
-            try:
-                from ..deployment.uniswap_v3_abis import UNISWAP_V3_POOL_ABI
-                real_pool_contract = self.pool_manager.web3.eth.contract(
-                    address=network_contracts['uniswap_pool'],
-                    abi=UNISWAP_V3_POOL_ABI
-                )
-                
-                # Store pool contract for real queries
-                if not hasattr(self.pool_manager, 'pool_contracts'):
-                    self.pool_manager.pool_contracts = {}
-                self.pool_manager.pool_contracts[pool_key] = real_pool_contract
-                
-                logger.info(f"✅ Connected real pool contract: {existing_pool_info.address}")
-                
-            except Exception as e:
-                logger.warning(f"Could not connect real pool contract: {e}")
-            
-            logger.info(f"✅ Using existing pool: {existing_pool_info.address}")
-            
-        else:
-            # Create new pool  
-            logger.info("🏊‍♂️ Creating new Uniswap V3 pool...")
-            pool_config = pools_config['uniswap_v3']
-            pool_info = await self.pool_manager.create_pool(
-                "TOKEN1",
-                "TOKEN2", 
-                pool_config['fee_tier'],
-                pool_config['initial_price_ratio']
-            )
-            
-            # Add initial liquidity
-            liquidity_config = pool_config['liquidity']
-            await self.pool_manager.add_liquidity(
-                f"TOKEN1_TOKEN2_{pool_config['fee_tier']}",
-                liquidity_config['amount_token_a'],
-                liquidity_config['amount_token_b']
-            )
-            
-            logger.info(f"Created pool with {liquidity_config['amount_token_a']}:{liquidity_config['amount_token_b']} liquidity")
+        # Register existing contracts (DO NOT deploy new ones)
+        contracts = network_config.get('contracts', {})
+        token1_addr = blockchain_client.w3.to_checksum_address(contracts['token1_address'])
+        token2_addr = blockchain_client.w3.to_checksum_address(contracts['token2_address'])
+        pool_addr = blockchain_client.w3.to_checksum_address(contracts['uniswap_pool'])
+        
+        self.pool_manager.deployed_tokens = {
+            'TOKEN1': type('TokenInfo', (), {'address': token1_addr, 'symbol': 'TOKEN1', 'decimals': 18})(),
+            'TOKEN2': type('TokenInfo', (), {'address': token2_addr, 'symbol': 'TOKEN2', 'decimals': 18})()
+        }
+        
+        pool_key = 'TOKEN1_TOKEN2_3000'
+        self.pool_manager.created_pools[pool_key] = type('PoolInfo', (), {
+            'address': pool_addr,
+            'token0': self.pool_manager.deployed_tokens['TOKEN1'],
+            'token1': self.pool_manager.deployed_tokens['TOKEN2'],
+            'fee': 3000,
+            'symbol': pool_key,
+            'get_price_ratio': lambda: 2.0
+        })()
+        
+        logger.info(f"✅ Pool: {pool_addr}")
+        logger.info(f"   TOKEN1: {token1_addr}")
+        logger.info(f"   TOKEN2: {token2_addr}")
     
     async def _setup_mev_bots(self) -> None:
         """Setup MEV bots from configuration"""
         logger.info("🤖 Setting up MEV bots...")
         
         mev_config = self.config['mev_bots']
+        mev_bot_key = os.getenv('MEV_BOT_PRIVATE_KEY', '0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2')
+        
+        from eth_account import Account
+        mev_account = Account.from_key(mev_bot_key)
         
         for bot_id, bot_config in mev_config['profiles'].items():
             try:
-                # Create bot from config
-                bot = create_bot_from_config(bot_id, bot_config)
-                self.mev_bots[bot_id] = bot
-                
-                # Add to latency manager
-                latency_config = bot_config.get('latency', {})
+                from .mev_bot import MEVBot, BotStrategy
                 from .latency_simulator import LatencyProfile
+                
+                strategy = BotStrategy(bot_config['strategy'])
+                latency_config = bot_config.get('latency', {})
                 latency_profile = LatencyProfile(**latency_config)
+                
+                bot = MEVBot(
+                    bot_id=bot_id,
+                    strategy_type=strategy,
+                    latency_simulator=self.latency_manager,
+                    wallet_address=mev_account.address,
+                    wallet_private_key=mev_bot_key,
+                    initial_balance=bot_config.get('initial_balance', 1.0),
+                    strategy_params=bot_config.get('strategy_params', {})
+                )
+                
+                self.mev_bots[bot_id] = bot
                 self.latency_manager.add_bot(bot_id, latency_profile)
                 
                 logger.info(f"Setup MEV bot: {bot}")
@@ -340,6 +234,20 @@ class MEVSimulator:
         for trader_id, trader_config in victim_config['traders'].items():
             try:
                 trader_config['victim_id'] = trader_id
+                
+                # Get wallet private key from environment or config
+                if 'wallet_private_key' in trader_config:
+                    key_name = trader_config['wallet_private_key']
+                    if key_name.startswith('${') and key_name.endswith('}'):
+                        env_var = key_name[2:-1]
+                        private_key = os.getenv(env_var)
+                        if not private_key:
+                            # Use default victim keys from environment config
+                            private_key = os.getenv('VICTIM1_PRIVATE_KEY', '0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba')
+                        trader_config['wallet_private_key'] = private_key
+                else:
+                    # Default to VICTIM1_PRIVATE_KEY
+                    trader_config['wallet_private_key'] = os.getenv('VICTIM1_PRIVATE_KEY', '0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba')
                 
                 # Create trader
                 trader = create_victim_trader_from_config(trader_config)

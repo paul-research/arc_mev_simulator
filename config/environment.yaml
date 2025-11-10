@@ -75,14 +75,14 @@ arc_testnet:
       
       # Standard Uniswap V3 Addresses (for compatibility)
       uniswap_v3_factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984"  # Standard factory
-      uniswap_v3_router: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"   # SwapRouter02
+      uniswap_v3_router: "0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67"   # Use custom swap router
       position_manager: "0xC36442b4c4e76c8f7a04B0eE0d2C2d4C6e5e4F2D"     # PositionManager
       quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"          # QuoterV2
     
   # Arc Testnet test accounts
   accounts:
     deployer:
-      private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+      private_key: "0x4d58edafc0c6889c6f211cc842a561835015eeaf273d9f8c8ec7ee960804f7ce"
       address: "0x0cDCCD90Ec76f490e1495E0190FeCAaCe165254a"
     
     mev_bots:
@@ -90,19 +90,19 @@ arc_testnet:
         private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
         address: "0xF1f0b247Ec9d10B5410CC67d097CF099ebAD973d"
       bot2:
-        private_key: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-        address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+        address: "0xF1f0b247Ec9d10B5410CC67d097CF099ebAD973d"
       bot3:
-        private_key: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
-        address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+        private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+        address: "0xF1f0b247Ec9d10B5410CC67d097CF099ebAD973d"
       bot4:
-        private_key: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"
-        address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+        private_key: "0x488e3ab7dc2033bc970e83bc6daf50ed83c4927e5d8f5bd5ca971df3d062cac2"
+        address: "0xF1f0b247Ec9d10B5410CC67d097CF099ebAD973d"
     
     victims:
       victim1:
-        private_key: "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba"
-        address: "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+        private_key: "0x4d58edafc0c6889c6f211cc842a561835015eeaf273d9f8c8ec7ee960804f7ce"
+        address: "0x0cDCCD90Ec76f490e1495E0190FeCAaCe165254a"
       victim2:
         private_key: "0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e"
         address: "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
