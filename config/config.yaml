@@ -2,7 +2,7 @@
 # paul.kwon@circle.com
 
 simulation:
-  name: "mev_pbs_research"
+  name: "mev_frontrun_simulation"
   duration_minutes: 30
   target_transactions: 100
   output_dir: "data/results"
@@ -347,14 +347,11 @@ backrun_bots:
       speed: "medium"
       only_backrun: true
 
-# PBS Research
-pbs_research:
-  enabled: false
-  future_enhancements:
-    - "Block builder integration"
-    - "MEV redistribution"
-    - "User protection"
-    - "Front-run elimination"
+# Future Research
+future_work:
+  pbs_integration: false
+  private_mempool: false
+  builder_competition: false
 
 # Logging Configuration
 logging:

@@ -1,6 +1,6 @@
 """
 MEV-Simulator
-PBS research platform
+Front-running attack simulator
 paul.kwon@circle.com
 """
 
@@ -60,12 +60,12 @@ _setup_default_logging()
 PACKAGE_INFO = {
     "name": "MEV-Simulator",
     "version": __version__,
-    "description": "PBS research platform",
+    "description": "Front-running attack simulator",
     "author": __author__,
     "email": __email__,
     "license": "MIT",
     "url": "https://github.com/paul-research/arc_mev_simulator",
-    "keywords": ["MEV", "PBS", "Circle", "research"]
+    "keywords": ["MEV", "frontrun", "sandwich", "Uniswap"]
 }
 
 

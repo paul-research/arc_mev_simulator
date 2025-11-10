@@ -26,7 +26,8 @@ backrun_bots:
   bot_backrun_1:
     strategy_params:
       monitor_price_deviation: 0.003  # 0.3% threshold
-      only_backrun: true  # Never front-run
+      target_price_ratio: 2.0
+      only_backrun: true
 ```
 
 ### On/Off
@@ -39,36 +40,6 @@ backrun_bots:
 # Disable
 backrun_bots:
   enabled: false
-```
-
-## PBS Research
-
-### Scenario Comparison
-
-| Mode | MEV Profit | Victim Loss | Backrun Profit |
-|------|-----------|-------------|----------------|
-| Full Sandwich | ~34 USDC | ~43 USDC | ~5 USDC |
-| PBS (frontrun_only: true) | ~20 USDC | ~30 USDC | ~5 USDC |
-| Ideal (mev off) | 0 USDC | 0 USDC | ~10 USDC |
-
-### Configuration
-
-**Full Sandwich:**
-```yaml
-mev_bots.attack_mode.frontrun_only: false
-backrun_bots.enabled: true
-```
-
-**PBS Mode:**
-```yaml
-mev_bots.attack_mode.frontrun_only: true
-backrun_bots.enabled: true
-```
-
-**Ideal PBS:**
-```yaml
-mev_bots.enabled: false
-backrun_bots.enabled: true
 ```
 
 ## Code Location

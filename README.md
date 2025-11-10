@@ -1,10 +1,10 @@
 # MEV-Simulator
 
-PBS research platform - Circle Research (paul.kwon@circle.com)
+MEV front-running attack simulator - Circle Research (paul.kwon@circle.com)
 
-## Objective
+## Overview
 
-Evaluate PBS effectiveness: eliminate front-running while preserving beneficial arbitrage.
+Simulates MEV bot attacks (front-running, sandwich) against victim traders on Uniswap V3.
 
 ## Quick Start
 
@@ -21,41 +21,24 @@ python scripts/run_complete_simulation.py -e arc_testnet -q --confirm
 
 ## Configuration
 
-### Attack Mode (MEV Bots)
+### MEV Bots
 ```yaml
 # config/config.yaml
 mev_bots:
+  count: 4
   attack_mode:
-    frontrun_only: false  # true = disable backrun (PBS mode)
+    allow_frontrun: true
+    allow_sandwich: true
 ```
 
-### Backrun Bots (Beneficial)
+### Backrun Bots
 ```yaml
 backrun_bots:
-  enabled: true  # Price restoration bots
+  enabled: true
   bot_backrun_1:
     strategy_params:
-      monitor_price_deviation: 0.003  # 0.3% trigger
-```
-
-## Research Scenarios
-
-### 1. Full Sandwich (Baseline)
-```yaml
-mev_bots.attack_mode.frontrun_only: false
-backrun_bots.enabled: true
-```
-
-### 2. PBS Simulation
-```yaml
-mev_bots.attack_mode.frontrun_only: true
-backrun_bots.enabled: true
-```
-
-### 3. Ideal PBS
-```yaml
-mev_bots.enabled: false
-backrun_bots.enabled: true
+      monitor_price_deviation: 0.003
+      target_price_ratio: 2.0
 ```
 
 ## Network Config
@@ -81,7 +64,7 @@ print(f"Victim Loss: {df['victim_loss'].sum():.2f} USDC")
 
 ## Documentation
 
-- `docs/BACKRUN_CONFIG.md` - Backrun bot details
+- `docs/BACKRUN_CONFIG.md` - Backrun bot configuration
 
 ## License
 
