@@ -84,6 +84,7 @@ class MEVBot:
                     'gas': 100000,
                     'maxFeePerGas': self.w3.to_wei(500, 'gwei') if high_priority else self.w3.to_wei(400, 'gwei'),
                     'maxPriorityFeePerGas': self.w3.to_wei(100, 'gwei') if high_priority else self.w3.to_wei(80, 'gwei'),
+                    'chainId': 5042002
                 })
                 
                 signed = self.w3.eth.account.sign_transaction(approve_tx, self.account.key)
@@ -111,6 +112,7 @@ class MEVBot:
                 'gas': 800000,
                 'maxFeePerGas': self.w3.to_wei(gas_price, 'gwei'),
                 'maxPriorityFeePerGas': self.w3.to_wei(priority_fee, 'gwei'),
+                'chainId': 5042002
             })
             
             signed = self.w3.eth.account.sign_transaction(swap_tx, self.account.key)
