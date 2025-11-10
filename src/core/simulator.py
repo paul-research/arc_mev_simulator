@@ -92,6 +92,7 @@ class MEVSimulator:
         # Core components
         self.pool_manager: Optional[PoolManager] = None
         self.mev_bots: Dict[str, MEVBot] = {}
+        self.backrun_bots: Dict[str, Any] = {}  # Beneficial arbitrage bots
         self.victim_manager = VictimTraderManager()
         self.latency_manager = CompetitionLatencyManager()
         
@@ -113,7 +114,7 @@ class MEVSimulator:
     
     async def setup(self) -> None:
         """Setup all simulation components"""
-        logger.info("🚀 Setting up MEV simulation components...")
+        logger.info("Setting up MEV simulation components...")
         
         # 1. Setup pool manager and deploy contracts
         await self._setup_pools()
@@ -121,7 +122,10 @@ class MEVSimulator:
         # 2. Setup MEV bots
         await self._setup_mev_bots()
         
-        # 3. Setup victim traders
+        # 3. Setup backrun bots (beneficial)
+        await self._setup_backrun_bots()
+        
+        # 4. Setup victim traders
         await self._setup_victim_traders()
         
         # 4. Fund all accounts
@@ -347,6 +351,65 @@ class MEVSimulator:
                 logger.error(f"Failed to setup victim trader {trader_id}: {e}")
                 raise
     
+    async def _setup_backrun_bots(self) -> None:
+        """Setup backrun bots (beneficial arbitrage bots)"""
+        logger.info("Setting up backrun bots...")
+        
+        backrun_config = self.config.get('backrun_bots', {})
+        
+        if not backrun_config.get('enabled', False):
+            logger.info("Backrun bots disabled")
+            return
+        
+        # Import BackrunBot
+        from .mev_bot import BackrunBot
+        
+        # Get pool config for target price
+        pool_config = self.config.get('pools', {}).get('uniswap_v3', {})
+        price_ratio_str = pool_config.get('initial_price_ratio', "1:2")
+        
+        # Parse target ratio (e.g., "1:2" -> 2.0)
+        parts = price_ratio_str.split(':')
+        target_ratio = float(parts[1]) / float(parts[0])
+        
+        logger.info(f"Backrun target price ratio: {target_ratio}")
+        
+        # Create backrun bots from config
+        for bot_id, bot_config in backrun_config.items():
+            if bot_id in ['enabled', 'count', 'description']:
+                continue
+                
+            try:
+                # Get bot parameters
+                deviation_threshold = bot_config.get('strategy_params', {}).get(
+                    'monitor_price_deviation', 0.003
+                )
+                initial_balance = bot_config.get('initial_balance_eth', 2.0)
+                latency_config = bot_config.get('latency', {})
+                total_latency = sum([
+                    latency_config.get('block_detection', 100),
+                    latency_config.get('calculation', 50),
+                    latency_config.get('execution', 150)
+                ])
+                
+                # Create backrun bot
+                backrun_bot = BackrunBot(
+                    bot_id=bot_id,
+                    target_price_ratio=target_ratio,
+                    deviation_threshold=deviation_threshold,
+                    initial_balance=initial_balance,
+                    pool_manager=self.pool_manager,
+                    latency_ms=total_latency
+                )
+                
+                self.backrun_bots[bot_id] = backrun_bot
+                
+                logger.info(f"Setup backrun bot: {bot_id} (target={target_ratio}, threshold={deviation_threshold})")
+                
+            except Exception as e:
+                logger.error(f"Failed to setup backrun bot {bot_id}: {e}")
+                raise
+    
     async def _fund_accounts(self) -> None:
         """Fund all bot and victim accounts with initial balances"""
         logger.info("💰 Funding accounts...")
@@ -537,6 +600,17 @@ class MEVSimulator:
         # 5. Record pool states
         for pool_key in self.pool_manager.list_pools():
             round_data.pool_states[pool_key] = self.pool_manager.get_pool_state(pool_key)
+        
+        # 6. Backrun bots monitor and rebalance price
+        if self.backrun_bots and (victim_trades or attack_results):
+            for pool_key in available_pools:
+                for bot_id, backrun_bot in self.backrun_bots.items():
+                    try:
+                        result = await backrun_bot.monitor_and_rebalance(pool_key)
+                        if result:
+                            round_data.mev_attacks.append(result)
+                    except Exception as e:
+                        logger.error(f"Backrun bot {bot_id} error: {e}")
         
         # Log round summary
         if attack_results or victim_trades:

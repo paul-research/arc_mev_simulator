@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 
 class BotStrategy(Enum):
     """MEV bot strategy types"""
-    AGGRESSIVE = "aggressive"      # High bid, fast execution, maximum profit
-    CONSERVATIVE = "conservative"  # Lower bid, safe execution, steady profit
-    SLOW = "slow"                 # Minimal bid, patient execution
-    ADAPTIVE = "adaptive"         # Learning strategy that adapts to competition
+    AGGRESSIVE = "aggressive"
+    CONSERVATIVE = "conservative"
+    SLOW = "slow"
+    ADAPTIVE = "adaptive"
+    BACKRUN_ARBITRAGE = "backrun_arbitrage"  # Price correction bot
 
 
 @dataclass
@@ -620,3 +621,196 @@ if __name__ == "__main__":
     
     # Run the test
     asyncio.run(test_mev_bot())
+
+
+class BackrunBot:
+    """Beneficial arbitrage bot that restores price to target"""
+    
+    def __init__(self, 
+                 bot_id: str,
+                 target_price_ratio: float,
+                 deviation_threshold: float,
+                 initial_balance: float,
+                 pool_manager,
+                 latency_ms: int = 200):
+        self.bot_id = bot_id
+        self.target_price_ratio = target_price_ratio  # e.g., 2.0 for 1:2
+        self.deviation_threshold = deviation_threshold  # e.g., 0.003 for 0.3%
+        self.current_balance = initial_balance
+        self.pool_manager = pool_manager
+        self.latency_ms = latency_ms
+        
+        self.total_trades = 0
+        self.successful_trades = 0
+        self.total_profit = 0.0
+        self.trade_history = []
+        
+        logger.info(f"BackrunBot {bot_id} initialized: target={target_price_ratio}, threshold={deviation_threshold}")
+    
+    async def monitor_and_rebalance(self, pool_key: str) -> Optional[AttackResult]:
+        """Monitor pool price and execute arbitrage if deviation detected"""
+        
+        # Simulate detection latency
+        await asyncio.sleep(self.latency_ms / 1000.0)
+        
+        try:
+            # Get current pool price
+            pool_info = self.pool_manager.created_pools.get(pool_key)
+            if not pool_info:
+                return None
+            
+            current_ratio = pool_info.get_price_ratio()
+            
+            # Calculate deviation from target
+            deviation = abs(current_ratio - self.target_price_ratio) / self.target_price_ratio
+            
+            # Only act if deviation exceeds threshold
+            if deviation < self.deviation_threshold:
+                return None
+            
+            logger.info(f"{self.bot_id}: Price deviation {deviation:.2%} detected (current={current_ratio:.4f}, target={self.target_price_ratio})")
+            
+            # Determine trade direction to restore price
+            if current_ratio > self.target_price_ratio:
+                # TOKEN1 too expensive -> sell TOKEN1, buy TOKEN2
+                token_in = pool_info.token1.symbol
+                token_out = pool_info.token0.symbol
+                direction = "sell TOKEN1"
+            else:
+                # TOKEN2 too expensive -> sell TOKEN2, buy TOKEN1
+                token_in = pool_info.token0.symbol
+                token_out = pool_info.token1.symbol
+                direction = "buy TOKEN1"
+            
+            # Calculate trade size to restore price
+            # Simple heuristic: trade amount proportional to deviation
+            liquidity_value = pool_info.liquidity * current_ratio / (2**96)
+            trade_amount = min(
+                liquidity_value * deviation * 0.5,  # 50% of deviation
+                self.current_balance * 0.1  # Max 10% of balance
+            )
+            
+            if trade_amount < 0.01:  # Minimum trade size
+                return None
+            
+            # Execute arbitrage trade
+            result = await self._execute_arbitrage(
+                pool_key=pool_key,
+                token_in=token_in,
+                token_out=token_out,
+                amount=trade_amount,
+                direction=direction,
+                pre_trade_ratio=current_ratio
+            )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"{self.bot_id}: Error in monitor_and_rebalance: {e}")
+            return None
+    
+    async def _execute_arbitrage(self,
+                                  pool_key: str,
+                                  token_in: str,
+                                  token_out: str,
+                                  amount: float,
+                                  direction: str,
+                                  pre_trade_ratio: float) -> AttackResult:
+        """Execute arbitrage trade"""
+        
+        self.total_trades += 1
+        start_time = time.time()
+        
+        try:
+            # Simulate trade execution
+            swap_result = await self.pool_manager.simulate_swap(
+                pool_key=pool_key,
+                token_in=token_in,
+                amount_in=amount,
+                slippage_tolerance=0.01
+            )
+            
+            if not swap_result['success']:
+                logger.warning(f"{self.bot_id}: Arbitrage trade failed: {swap_result.get('error')}")
+                return AttackResult(
+                    opportunity_id=f"backrun_{int(time.time()*1000)}",
+                    bot_id=self.bot_id,
+                    attack_type="backrun_arbitrage",
+                    success=False,
+                    gross_profit=0.0,
+                    gas_costs=0.0,
+                    net_profit=0.0
+                )
+            
+            # Calculate profit/loss
+            amount_out = swap_result['amount_out']
+            gas_cost = swap_result.get('gas_cost', 0.001)
+            
+            # Simple profit calculation
+            gross_profit = amount_out - amount
+            net_profit = gross_profit - gas_cost
+            
+            # Update balance
+            self.current_balance += net_profit
+            self.total_profit += net_profit
+            
+            if net_profit > 0:
+                self.successful_trades += 1
+            
+            # Get post-trade price
+            pool_info = self.pool_manager.created_pools.get(pool_key)
+            post_trade_ratio = pool_info.get_price_ratio() if pool_info else pre_trade_ratio
+            
+            result = AttackResult(
+                opportunity_id=f"backrun_{int(time.time()*1000)}",
+                bot_id=self.bot_id,
+                attack_type="backrun_arbitrage",
+                success=True,
+                backrun_tx_hash=f"0x{random.randint(10**63, 10**64-1):064x}",
+                gross_profit=gross_profit,
+                gas_costs=gas_cost,
+                net_profit=net_profit,
+                victim_loss=0.0,  # Backrun doesn't harm victims
+                total_latency_ms=self.latency_ms,
+                slippage_caused=0.0
+            )
+            
+            logger.info(f"{self.bot_id}: Arbitrage {direction} - profit={net_profit:.4f} USDC, "
+                       f"price: {pre_trade_ratio:.4f} -> {post_trade_ratio:.4f} (target={self.target_price_ratio})")
+            
+            self.trade_history.append({
+                'timestamp': time.time(),
+                'direction': direction,
+                'amount': amount,
+                'profit': net_profit,
+                'pre_price': pre_trade_ratio,
+                'post_price': post_trade_ratio
+            })
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"{self.bot_id}: Error executing arbitrage: {e}")
+            return AttackResult(
+                opportunity_id=f"backrun_{int(time.time()*1000)}",
+                bot_id=self.bot_id,
+                attack_type="backrun_arbitrage",
+                success=False,
+                gross_profit=0.0,
+                gas_costs=0.0,
+                net_profit=0.0
+            )
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get backrun bot performance statistics"""
+        return {
+            'bot_id': self.bot_id,
+            'total_trades': self.total_trades,
+            'successful_trades': self.successful_trades,
+            'success_rate': self.successful_trades / max(self.total_trades, 1),
+            'total_profit': self.total_profit,
+            'current_balance': self.current_balance,
+            'avg_profit': self.total_profit / max(self.successful_trades, 1) if self.successful_trades > 0 else 0,
+            'trade_history': self.trade_history[-10:]  # Last 10 trades
+        }
+
