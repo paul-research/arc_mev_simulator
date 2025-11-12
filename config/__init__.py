@@ -88,10 +88,10 @@ class ConfigManager:
         config = self.load_config()
         return config['pools']
     
-    def get_simulation_config(self) -> Dict[str, Any]:
-        """Get simulation configuration"""
+    def get_execution_config(self) -> Dict[str, Any]:
+        """Get execution configuration"""
         config = self.load_config()
-        return config['simulation']
+        return config.get('execution', config.get('simulation', {}))
     
     def expand_env_vars(self, text: str) -> str:
         """Expand environment variables in configuration strings"""
@@ -110,7 +110,9 @@ class ConfigManager:
             networks = self.load_networks()
             
             # Check required sections
-            required_sections = ['simulation', 'network', 'mev_bots', 'pools']
+            required_sections = ['network', 'mev_bots', 'pools']
+            if 'execution' not in config and 'simulation' not in config:
+                raise ValueError("Config must have 'execution' or 'simulation' section")
             for section in required_sections:
                 if section not in config:
                     raise ValueError(f"Missing required config section: {section}")

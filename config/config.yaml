@@ -1,8 +1,8 @@
-# MEV-Simulator Configuration
+# MEV Attack Configuration
 # paul.kwon@circle.com
 
-simulation:
-  name: "mev_frontrun_simulation"
+execution:
+  name: "mev_frontrun_attack"
   duration_minutes: 60
   target_transactions: 300
   output_dir: "data/results"
@@ -219,27 +219,24 @@ analysis:
       - "slippage_distribution"
       - "gas_vs_profit_scatter"
 
-# Revenue Sharing Simulation
+# Revenue Sharing (Future Work)
 revenue_sharing:
   enabled: false
-  model: "jito_like"  # Options: jito_like, flashbots_like, custom
+  model: "jito_like"
   
-  # Distribution Parameters
   distribution:
-    validator_share: 0.5   # 50% to validator
-    user_share: 0.3        # 30% to affected users
-    protocol_share: 0.2    # 20% to protocol
+    validator_share: 0.5
+    user_share: 0.3
+    protocol_share: 0.2
     
-  # User Protection
   protection:
-    max_slippage_compensation: 0.05  # 5%
-    min_compensation_threshold: 0.001  # ETH
+    max_slippage_compensation: 0.05
+    min_compensation_threshold: 0.001
 
-# Advanced Features
+# Advanced Features (Future Work)
 features:
-  flashbots_simulation: false
   private_mempool: false
-  bundle_auction: true
+  bundle_auction: false
   cross_dex_arbitrage: false
 
 # Backrun Bots (Beneficial MEV)

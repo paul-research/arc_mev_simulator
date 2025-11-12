@@ -1,6 +1,6 @@
 """
-MEV-Simulator
-Front-running attack simulator
+MEV Front-Running Attack Tool
+Real blockchain MEV attacks on Arc Testnet
 paul.kwon@circle.com
 """
 
@@ -58,14 +58,14 @@ def _setup_default_logging():
 _setup_default_logging()
 
 PACKAGE_INFO = {
-    "name": "MEV-Simulator",
+    "name": "MEV-Attack-Tool",
     "version": __version__,
-    "description": "Front-running attack simulator",
+    "description": "Real MEV front-running attacks on Arc Testnet",
     "author": __author__,
     "email": __email__,
     "license": "MIT",
     "url": "https://github.com/paul-research/arc_mev_simulator",
-    "keywords": ["MEV", "frontrun", "sandwich", "Uniswap"]
+    "keywords": ["MEV", "frontrun", "blockchain", "Arc Testnet"]
 }
 
 

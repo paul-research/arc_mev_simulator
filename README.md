@@ -1,149 +1,128 @@
-# MEV Simulator
+# MEV Front-Running Attack Simulator
 
-Front-running attack simulator for blockchain MEV research.
+Front-running attack simulator on Arc Testnet using public mempool monitoring.
 
 **Author:** paul.kwon@circle.com  
-**Repository:** https://github.com/paul-research/arc_mev_simulator
+**Organization:** Circle Research
+
+---
 
 ## Overview
 
-This simulator demonstrates MEV (Maximal Extractable Value) attacks on Uniswap V3 pools running on Arc Testnet. It includes three independent components that work together:
+This simulator demonstrates MEV front-running attacks on Arc Testnet by monitoring public mempool transactions via `txpool_content` RPC and executing higher-gas transactions to achieve priority ordering.
 
-- **Victim Trader**: Normal users making trades
-- **MEV Bot**: Executes sandwich attacks (front-run + back-run)
-- **Backrun Bot**: Arbitrage bot that restores pool price to target ratio
+All transactions are executed on Arc Testnet blockchain.
 
-All transactions are executed on the actual blockchain, making this a realistic MEV research platform.
+### Attack Cases
+
+**Case 1:**
+- MEV Bot: Block 10835872 (executed first)
+- Victim: Block 10835917 (45 blocks later)
+- Method: +20 gwei gas priority
+
+**Case 2:**
+- MEV Bot: Block 10833967 (executed first)  
+- Victim: Block 10834330 (363 blocks later)
+- Method: +20 gwei gas priority
+
+---
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run victim trader (simulates normal trading)
-python scripts/run_victim_trader.py --trades 10 --interval 5
-
-# Run MEV bot (executes sandwich attacks)  
-python scripts/run_mev_bot.py --mode aggressive --demo
-
-# Run backrun bot (maintains price stability)
-python scripts/run_backrun_bot.py --target-ratio 2.0 --threshold 0.005
+python scripts/frontrun_attack_demo.py
 ```
 
-## Components
+---
 
-### 1. Victim Trader (`run_victim_trader.py`)
+## How It Works
 
-Simulates normal user trading activity.
+### 1. Mempool Monitoring
 
-**Usage:**
+Poll `txpool_content` RPC every 100ms to detect pending transactions:
+
+```python
+result = w3.provider.make_request('txpool_content', [])
+queued = result['result'].get('queued', {})
+
+for account, txs in queued.items():
+    for nonce, tx in txs.items():
+        if is_profitable_swap(tx):
+            execute_frontrun(tx)
+```
+
+### 2. Transaction Decoding
+
+Extract swap parameters from transaction input data:
+
+```python
+func, params = swap_router.decode_function_input(tx['input'])
+token_in = params['tokenIn']
+token_out = params['tokenOut']
+amount = params['amountIn']
+```
+
+### 3. Gas Priority Execution
+
+Submit transaction with higher gas to execute first:
+
+```python
+# Victim: 320 gwei
+# MEV Bot: 340 gwei (+20 gwei)
+# Result: MEV bot executes first due to gas priority
+```
+
+---
+
+## Scripts
+
+### `frontrun_attack_demo.py`
+
+Complete front-running attack demonstration.
+
 ```bash
-# 20 trades with 10 second intervals
-python scripts/run_victim_trader.py --trades 20 --interval 10
-
-# Fixed amount of 100 tokens per trade
-python scripts/run_victim_trader.py --trades 10 --amount 100
-
-# Custom RPC and private key
-python scripts/run_victim_trader.py --rpc https://custom-rpc.com --private-key 0x...
+python scripts/frontrun_attack_demo.py
 ```
 
-**Arguments:**
-- `--trades N`: Number of trades to execute (default: 10)
-- `--interval S`: Seconds between trades (default: 10)
-- `--amount A`: Fixed amount per trade (default: random 20-100)
-- `--rpc URL`: RPC endpoint (default: Arc Testnet)
-- `--private-key KEY`: Trader private key
+Execution flow:
+1. Start mempool monitoring
+2. Victim submits swap (320 gwei)
+3. MEV bot detects transaction
+4. MEV bot submits front-run (340 gwei)
+5. MEV bot executes first
 
-**Output:**
-```
-[21:33:24] Trade 1/3
-  Amount: 50.00 TOKEN2
-  Pool price before: 0.904889
-  ✅ TX: d19b9a38442b59c9c13e...
-  Block: 10378159
-  Pool price after: 0.976430
-  Price impact: +7.906%
-```
+### `victim_trader.py`
 
-### 2. MEV Bot (`run_mev_bot.py`)
+Simulates victim trading activity.
 
-Executes sandwich attacks on victim transactions.
-
-**Usage:**
 ```bash
-# Run in demo mode (2 example attacks)
-python scripts/run_mev_bot.py --demo
-
-# Monitor mempool (would need flashbots/private mempool in production)
-python scripts/run_mev_bot.py --mode aggressive --interval 5
-
-# Conservative attack strategy
-python scripts/run_mev_bot.py --mode conservative
+python scripts/victim_trader.py
 ```
 
-**Arguments:**
-- `--mode MODE`: Attack strategy (aggressive/conservative/adaptive)
-- `--demo`: Run demo attacks instead of monitoring
-- `--interval S`: Mempool check interval (default: 5)
-- `--rpc URL`: RPC endpoint
-- `--private-key KEY`: Bot private key
+### `mev_bot_realtime.py`
 
-**Attack Modes:**
-- `aggressive`: 80% of victim size, 1.5x gas multiplier
-- `conservative`: 30% of victim size, 1.2x gas multiplier  
-- `adaptive`: 50% of victim size, 1.3x gas multiplier
+Block monitoring MEV bot for fast chains.
 
-**Output:**
-```
-[21:35:10] 🎯 Sandwich Attack Opportunity Detected
-  Victim will trade: 50.00 TOKEN1
-  Pool price: 0.976430
-  🔴 Front-run: 25.00 TOKEN1
-     ✅ TX: a1b2c3... (block 10378200)
-  🔵 Back-run: 26.25 TOKEN1
-     ✅ TX: d4e5f6... (block 10378202)
-  💰 Estimated profit: 0.0125 ETH
-```
-
-### 3. Backrun Bot (`run_backrun_bot.py`)
-
-Monitors pool price and executes arbitrage to restore target ratio.
-
-**Usage:**
 ```bash
-# Maintain 2:1 ratio with 0.5% threshold
-python scripts/run_backrun_bot.py --target-ratio 2.0 --threshold 0.005
-
-# More aggressive rebalancing (0.1% threshold)
-python scripts/run_backrun_bot.py --target-ratio 2.0 --threshold 0.001 --interval 5
+python scripts/mev_bot_realtime.py
 ```
 
-**Arguments:**
-- `--target-ratio R`: Target price ratio TOKEN2/TOKEN1 (default: 2.0)
-- `--threshold T`: Deviation threshold to trigger (default: 0.005 = 0.5%)
-- `--interval S`: Check interval in seconds (default: 10)
-- `--rpc URL`: RPC endpoint
-- `--private-key KEY`: Bot private key
+Monitors new blocks and executes sandwich attacks.
 
-**Output:**
+### `backrun_bot.py`
+
+Arbitrage bot for pool price rebalancing.
+
+```bash
+python scripts/backrun_bot.py --target-ratio 2.0
 ```
-[21:36:15] Pool State
-  Reserves: 1450.23 TOKEN1, 1200.45 TOKEN2
-  Current ratio: 0.827534
-  Target ratio: 2.0
-  Deviation: 58.62%
-  ⚠️  REBALANCE NEEDED!
-  🔄 Buying TOKEN1 with 300.00 TOKEN2
-     ✅ TX: g7h8i9... (block 10378250)
-     New ratio: 1.652341
-     Improvement: 41.17%
-```
+
+---
 
 ## Configuration
 
-### Network Settings (`config/environment.yaml`)
+### Network (`config/environment.yaml`)
 
 ```yaml
 arc_testnet:
@@ -156,135 +135,183 @@ arc_testnet:
     token2_address: "0x3eaE1139A9A19517B0dB5696073d957542886BF8"
     uniswap_pool: "0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6"
     swap_router: "0xe372f58a9e03c7b56b3ea9a2a08f18767b75ca67"
-    pool_fee: 100  # 0.01%
+    pool_fee: 100
 ```
 
 ### Private Keys
 
-Set environment variables or pass via CLI:
 ```bash
-export DEPLOYER_PRIVATE_KEY="0x..."
-export VICTIM1_PRIVATE_KEY="0x..."  
-export MEV_BOT_PRIVATE_KEY="0x..."
-
-# Or pass directly
-python scripts/run_victim_trader.py --private-key 0x...
+export VICTIM_KEY="0x4d58..."
+export MEV_BOT_KEY="0x488e..."
 ```
 
-## Example: Complete Simulation
+---
 
-Run all three components simultaneously in different terminals:
+## Attack Methods
 
-**Terminal 1: Victim Trader**
-```bash
-python scripts/run_victim_trader.py --trades 100 --interval 15
+### Method 1: Mempool Monitoring (txpool_content)
+
+Poll `txpool_content` RPC to detect queued transactions before execution.
+
+**Advantages:**
+- Detect transactions before block inclusion
+- Full transaction details available
+- True front-running capability
+
+**Limitations:**
+- Requires fast polling (100-200ms)
+- Only sees transactions accepted by node
+
+### Method 2: Block Monitoring
+
+Monitor new blocks and execute attacks in subsequent blocks.
+
+**Advantages:**
+- Reliable on fast chains
+- Lower RPC overhead
+
+**Limitations:**
+- Not true front-running (reacts after execution)
+- Suitable for sandwich attacks only
+
+---
+
+## Technical Details
+
+### Gas Priority Mechanism
+
+Transactions with higher `maxFeePerGas` are prioritized by validators:
+
+| Party | Gas Price | Execution Order |
+|-------|-----------|-----------------|
+| Victim | 320 gwei | Second |
+| MEV Bot | 340 gwei | First |
+
+### Mempool States
+
+Arc Testnet RPC exposes two transaction pools:
+
+- **pending**: High-gas transactions ready for next block
+- **queued**: Lower-gas transactions waiting for inclusion
+
+Front-running targets transactions in the `queued` state.
+
+### Transaction Decoding
+
+Uniswap V3 `exactInputSingle` function signature:
+
+```
+Function: exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))
+Selector: 0x04e45aaf
 ```
 
-**Terminal 2: MEV Bot**
-```bash
-python scripts/run_mev_bot.py --mode aggressive --demo
-```
+Decode to extract:
+- `tokenIn`: Input token address
+- `tokenOut`: Output token address
+- `amountIn`: Swap amount
+- `amountOutMinimum`: Slippage tolerance
 
-**Terminal 3: Backrun Bot**
-```bash
-python scripts/run_backrun_bot.py --target-ratio 2.0 --threshold 0.005 --interval 10
-```
-
-### Expected Behavior:
-
-1. **Victim** trades 50 TOKEN2 → pool price moves from 0.90 to 0.98 (+7.9%)
-2. **MEV Bot** detects opportunity, front-runs with 25 TOKEN2
-3. Victim's trade executes at worse price (slippage increases)
-4. **MEV Bot** back-runs, closes position for profit
-5. **Backrun Bot** detects price deviation, arbitrages back toward 2.0 target
-6. Pool price stabilizes, ready for next cycle
-
-## Architecture
-
-```
-┌─────────────────┐
-│ Victim Trader   │  Normal trading (price impact 5-8%)
-│ (Terminal 1)    │
-└────────┬────────┘
-         │
-         ▼
-   ┌─────────────┐      ┌──────────────────┐
-   │ Uniswap V3  │◀─────│ MEV Bot          │  Sandwich attack
-   │ Pool        │      │ (Terminal 2)     │  (front-run + back-run)
-   │ 0x39A9...   │      └──────────────────┘
-   └─────────────┘
-         ▲
-         │
-┌────────┴────────┐
-│ Backrun Bot     │  Price rebalancing
-│ (Terminal 3)    │  (restore to target)
-└─────────────────┘
-```
-
-## Research Use Cases
-
-### 1. MEV Impact Measurement
-Run victim trader alone vs. with MEV bot to measure:
-- Slippage amplification
-- Price impact difference
-- Victim loss percentage
-
-### 2. Backrun Bot Effectiveness
-Compare pool stability with/without backrun bot:
-- Price deviation duration
-- Recovery time to target ratio
-- Liquidity efficiency
-
-### 3. Attack Strategy Comparison
-Test different MEV bot modes:
-- Aggressive: High profit, high gas cost
-- Conservative: Lower profit, lower risk
-- Adaptive: Learning-based optimization
-
-## Extending to PBS Research
-
-This simulator can be extended for Proposer-Builder Separation (PBS) research:
-
-1. **Private Mempool**: Replace mempool monitoring with private transaction submission
-2. **Builder Competition**: Multiple MEV bots bidding for block inclusion
-3. **Order Flow Auction**: Implement auction mechanism for transaction ordering
-
-See `docs/BACKRUN_CONFIG.md` for backrun bot implementation details.
+---
 
 ## Tests
 
-Run test suite to verify functionality:
-
 ```bash
-# Single swap verification
+# Single swap test
 python tests/test_victim_swap.py
 
-# 10 consecutive MEV attacks
+# Multiple attacks
 python tests/test_10_attacks.py
 
-# Backrun bot price restoration
+# Backrun rebalancing
 python tests/test_backrun_rebalance.py
 ```
 
+---
+
 ## Troubleshooting
 
-### Transactions not appearing on blockchain
-- Verify correct chain ID (5042002 for Arc Testnet)
-- Check private key has sufficient ETH balance
-- Confirm RPC endpoint is accessible
+### Transactions stuck in queue
+
+Check pending transaction count:
+
+```python
+confirmed = w3.eth.get_transaction_count(address, 'latest')
+pending = w3.eth.get_transaction_count(address, 'pending')
+queued_count = pending - confirmed
+```
+
+Clear with high-gas replacement transactions.
+
+### Invalid chain ID error
+
+Arc Testnet chain ID is `5042002`. Ensure all transactions include:
+
+```python
+'chainId': 5042002
+```
 
 ### Pool price not changing
-- Verify using correct pool address (0x39A9...)
-- Check pool has liquidity
-- Confirm fee tier matches (100 = 0.01%)
 
-### "Invalid chain ID" error
-- All transactions must include `chainId: 5042002`
-- Update `config/environment.yaml` if using different network
+Verify pool address: `0x39A9Ba5F012aB6D6fc90E563C72bD85949Ca0FF6`
+
+---
+
+## Project Structure
+
+```
+MEV-simulator/
+├── scripts/
+│   ├── frontrun_attack_demo.py
+│   ├── victim_trader.py
+│   ├── mev_bot.py
+│   ├── mev_bot_realtime.py
+│   └── backrun_bot.py
+├── tests/
+│   ├── test_victim_swap.py
+│   ├── test_10_attacks.py
+│   └── test_backrun_rebalance.py
+├── src/
+│   ├── core/
+│   ├── deployment/
+│   └── utils/
+└── config/
+    ├── config.yaml
+    └── environment.yaml
+```
+
+---
+
+## Attack Cases on Arc Testnet
+
+**Transaction 1 (MEV Bot):**
+```
+Hash:  0x23664bc04a2c90a5375c3c23a47df220f53e3d725e7acb1821651d5c1cae2107
+Block: 10835872
+Index: 0
+```
+
+**Transaction 2 (Victim):**
+```
+Hash:  0xc8c5754eb9beb41a3d152f0e6f2dfa40d115ee814b6a49029c56a252b3293644
+Block: 10835917
+Index: 3
+```
+
+Explorer: `https://arc-testnet-explorer.circle.com`
+
+---
 
 ## License
 
 MIT
+
+---
+
+## Disclaimer
+
+For research and educational purposes only.
+
+---
 
 ## Citation
 
@@ -293,6 +320,7 @@ MIT
   author = {Paul Kwon},
   title = {MEV Front-Running Attack Simulator},
   year = {2025},
+  organization = {Circle Research},
   url = {https://github.com/paul-research/arc_mev_simulator}
 }
 ```
